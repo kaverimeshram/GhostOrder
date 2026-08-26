@@ -97,7 +97,7 @@ mod tests {
     }
 
     #[test]
-    fn test_successful_order_execution() {
+    fn test_successful_execution_price_above_target() {
         let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
         let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
         let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
@@ -120,32 +120,70 @@ mod tests {
         let order_id = escrow
             .create_order(token_in_addr, token_out_addr, amount_in, target_price, min_amount_out, expiry);
 
-        assert(token_in.balance_of(escrow_addr) == amount_in, 'Escrow holds token_in');
-        assert(token_out.balance_of(USER1()) == 0_u256, 'USER1 has no token_out yet');
-
-        // Oracle price reaches target
+        // Set oracle price ABOVE target (3000 > 2500)
         set_contract_address(ADMIN());
-        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 3000_u256);
 
         // Keeper executes order permissionlessly
+        set_caller_address(KEEPER());
         set_contract_address(KEEPER());
         escrow.execute_order(order_id);
 
-        // Check balances after execution
+        // Verify balances after execution
         assert(token_in.balance_of(escrow_addr) == 0_u256, 'Escrow token_in should be 0');
-        assert(token_in.balance_of(settlement_addr) == amount_in, 'Settlement received token_in');
-        assert(token_out.balance_of(USER1()) == min_amount_out, 'USER1 received token_out');
+        assert(token_in.balance_of(settlement_addr) == amount_in, 'Settlement got token_in');
+        assert(token_out.balance_of(USER1()) == min_amount_out, 'Owner got token_out');
         assert(token_in.balance_of(KEEPER()) == 0_u256, 'Keeper got no token_in');
         assert(token_out.balance_of(KEEPER()) == 0_u256, 'Keeper got no token_out');
 
-        // Check order status is Executed
+        // Verify order status is Executed
+        let order = escrow.get_order(order_id);
+        assert(order.status == OrderStatus::Executed, 'Status should be Executed');
+    }
+
+    #[test]
+    fn test_successful_execution_price_equals_target() {
+        let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+        let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let escrow = IGhostEscrowDispatcher { contract_address: escrow_addr };
+
+        let amount_in: u256 = 1000_u256;
+        let target_price: u256 = 2500_u256;
+        let min_amount_out: u256 = 2400_u256;
+        let expiry: u64 = 5000;
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        token_out.mint(settlement_addr, 10000_u256);
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, amount_in);
+        let order_id = escrow
+            .create_order(token_in_addr, token_out_addr, amount_in, target_price, min_amount_out, expiry);
+
+        // Set oracle price EQUAL to target (2500 == 2500)
+        set_contract_address(ADMIN());
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+
+        assert(token_in.balance_of(escrow_addr) == 0_u256, 'Escrow token_in 0');
+        assert(token_in.balance_of(settlement_addr) == amount_in, 'Settlement received token_in');
+        assert(token_out.balance_of(USER1()) == min_amount_out, 'Owner received token_out');
+        assert(token_in.balance_of(KEEPER()) == 0_u256, 'Keeper has no token_in');
+        assert(token_out.balance_of(KEEPER()) == 0_u256, 'Keeper has no token_out');
+
         let order = escrow.get_order(order_id);
         assert(order.status == OrderStatus::Executed, 'Status should be Executed');
     }
 
     #[test]
     #[should_panic(expected: ('Price condition not met', 'ENTRYPOINT_FAILED'))]
-    fn test_execute_fails_when_price_condition_not_met() {
+    fn test_execute_fails_when_price_below_target() {
         let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
         let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
         let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
@@ -161,13 +199,14 @@ mod tests {
         token_in.approve(escrow_addr, 1000_u256);
         let order_id = escrow.create_order(token_in_addr, token_out_addr, 1000_u256, 2500_u256, 2400_u256, 5000);
 
+        set_caller_address(KEEPER());
         set_contract_address(KEEPER());
         escrow.execute_order(order_id);
     }
 
     #[test]
     #[should_panic(expected: ('Order has expired', 'ENTRYPOINT_FAILED'))]
-    fn test_execute_fails_when_order_expired() {
+    fn test_execute_fails_for_expired_order() {
         let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
         let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
         let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
@@ -185,13 +224,14 @@ mod tests {
 
         // Advance time to expiry
         set_block_timestamp(5000);
+        set_caller_address(KEEPER());
         set_contract_address(KEEPER());
         escrow.execute_order(order_id);
     }
 
     #[test]
     #[should_panic(expected: ('Order is not active', 'ENTRYPOINT_FAILED'))]
-    fn test_execute_fails_when_order_cancelled() {
+    fn test_execute_fails_for_cancelled_order() {
         let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
         let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
         let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
@@ -210,13 +250,146 @@ mod tests {
         // Cancel order
         escrow.cancel_order(order_id);
 
+        set_caller_address(KEEPER());
         set_contract_address(KEEPER());
         escrow.execute_order(order_id);
     }
 
     #[test]
+    #[should_panic(expected: ('Order does not exist', 'ENTRYPOINT_FAILED'))]
+    fn test_execute_fails_for_nonexistent_order_zero() {
+        let (escrow_addr, _, _, _, _) = setup();
+        let escrow = IGhostEscrowDispatcher { contract_address: escrow_addr };
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(0);
+    }
+
+    #[test]
+    #[should_panic(expected: ('Order does not exist', 'ENTRYPOINT_FAILED'))]
+    fn test_execute_fails_for_nonexistent_order_high() {
+        let (escrow_addr, _, _, _, _) = setup();
+        let escrow = IGhostEscrowDispatcher { contract_address: escrow_addr };
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(999);
+    }
+
+    #[test]
+    fn test_order_status_becomes_executed_after_successful_execution() {
+        let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+        let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let escrow = IGhostEscrowDispatcher { contract_address: escrow_addr };
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        token_out.mint(settlement_addr, 10000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(token_in_addr, token_out_addr, 1000_u256, 2500_u256, 2400_u256, 5000);
+
+        let order_before = escrow.get_order(order_id);
+        assert(order_before.status == OrderStatus::Active, 'Status before should be Active');
+
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+
+        let order_after = escrow.get_order(order_id);
+        assert(order_after.status == OrderStatus::Executed, 'Status after should be Executed');
+    }
+
+    #[test]
+    fn test_owner_receives_expected_token_out() {
+        let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+        let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let escrow = IGhostEscrowDispatcher { contract_address: escrow_addr };
+
+        let min_amount_out: u256 = 2400_u256;
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        token_out.mint(settlement_addr, 10000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(token_in_addr, token_out_addr, 1000_u256, 2500_u256, min_amount_out, 5000);
+
+        assert(token_out.balance_of(USER1()) == 0_u256, 'Owner token_out before is 0');
+
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+
+        assert(token_out.balance_of(USER1()) == min_amount_out, 'Owner received token_out');
+    }
+
+    #[test]
+    fn test_escrow_no_longer_holds_executed_token_in() {
+        let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+        let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let escrow = IGhostEscrowDispatcher { contract_address: escrow_addr };
+
+        let amount_in: u256 = 1000_u256;
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        token_out.mint(settlement_addr, 10000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, amount_in);
+        let order_id = escrow.create_order(token_in_addr, token_out_addr, amount_in, 2500_u256, 2400_u256, 5000);
+
+        assert(token_in.balance_of(escrow_addr) == amount_in, 'Escrow holds token_in before');
+
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+
+        assert(token_in.balance_of(escrow_addr) == 0_u256, 'Escrow holds 0 token_in after');
+    }
+
+    #[test]
+    fn test_keeper_receives_no_user_tokens() {
+        let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+        let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let escrow = IGhostEscrowDispatcher { contract_address: escrow_addr };
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        token_out.mint(settlement_addr, 10000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(token_in_addr, token_out_addr, 1000_u256, 2500_u256, 2400_u256, 5000);
+
+        assert(token_in.balance_of(KEEPER()) == 0_u256, 'Keeper token_in before 0');
+        assert(token_out.balance_of(KEEPER()) == 0_u256, 'Keeper token_out before 0');
+
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+
+        assert(token_in.balance_of(KEEPER()) == 0_u256, 'Keeper token_in after 0');
+        assert(token_out.balance_of(KEEPER()) == 0_u256, 'Keeper token_out after 0');
+    }
+
+    #[test]
     #[should_panic(expected: ('Output below min_amount_out', 'ENTRYPOINT_FAILED', 'ENTRYPOINT_FAILED'))]
-    fn test_execute_fails_when_output_below_min_amount_out() {
+    fn test_settlement_failure_reverts_execution_output_below_min() {
         let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup();
         let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
         let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
@@ -236,6 +409,7 @@ mod tests {
         token_in.approve(escrow_addr, 1000_u256);
         let order_id = escrow.create_order(token_in_addr, token_out_addr, 1000_u256, 2500_u256, 2400_u256, 5000);
 
+        set_caller_address(KEEPER());
         set_contract_address(KEEPER());
         escrow.execute_order(order_id);
     }
@@ -258,6 +432,7 @@ mod tests {
         token_in.approve(escrow_addr, 1000_u256);
         let order_id = escrow.create_order(token_in_addr, token_out_addr, 1000_u256, 2500_u256, 2400_u256, 5000);
 
+        set_caller_address(KEEPER());
         set_contract_address(KEEPER());
         escrow.execute_order(order_id);
 

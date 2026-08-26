@@ -167,6 +167,7 @@ pub mod GhostEscrow {
             let current_time = get_block_timestamp();
             assert(current_time < order.expiry, 'Order has expired');
 
+            // Query current price from oracle and ensure price condition is met
             let oracle_addr = self.oracle.read();
             let oracle_dispatcher = IPriceOracleDispatcher { contract_address: oracle_addr };
             let current_price = oracle_dispatcher.get_price(order.token_in, order.token_out);
@@ -174,11 +175,7 @@ pub mod GhostEscrow {
 
             let settlement_addr = self.settlement.read();
 
-            // Checks-effects: update state before external settlement
-            order.status = OrderStatus::Executed;
-            self.orders.write(order_id, order);
-
-            // Interactions: send escrowed token_in to settlement
+            // Transfer exact escrowed token_in from GhostEscrow to settlement
             let token_in_dispatcher = IERC20Dispatcher { contract_address: order.token_in };
             let transfer_success = token_in_dispatcher.transfer(settlement_addr, order.amount_in);
             assert(transfer_success, 'Transfer to settlement failed');
@@ -195,6 +192,11 @@ pub mod GhostEscrow {
                 );
             assert(actual_amount_out >= order.min_amount_out, 'Output below min_amount_out');
 
+            // Mark order as Executed after settlement succeeds
+            order.status = OrderStatus::Executed;
+            self.orders.write(order_id, order);
+
+            // Emit execution event with keeper caller and actual amount_out
             self.emit(OrderExecuted { order_id, keeper: caller, amount_out: actual_amount_out });
         }
 
