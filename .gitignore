@@ -1,5 +1,17 @@
-
+# Secrets
 .env
-target/
-.DS_Store
+.env.local
+.env.*.local
 
+# Dependencies
+node_modules/
+
+# Build outputs
+target/
+dist/
+
+# Logs
+*.log
+
+# OS
+.DS_Store

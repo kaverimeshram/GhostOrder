@@ -1,0 +1,106 @@
+[
+  {
+    "type": "impl",
+    "name": "MockPriceOracleImpl",
+    "interface_name": "ghost_orders::types::IPriceOracle"
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "ghost_orders::types::IPriceOracle",
+    "items": [
+      {
+        "type": "function",
+        "name": "set_price",
+        "inputs": [
+          {
+            "name": "token_in",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_out",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "price",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_price",
+        "inputs": [
+          {
+            "name": "token_in",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_out",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "constructor",
+    "name": "constructor",
+    "inputs": []
+  },
+  {
+    "type": "event",
+    "name": "ghost_orders::mock_price_oracle::MockPriceOracle::PriceSet",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "token_in",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "token_out",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "price",
+        "type": "core::integer::u256",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ghost_orders::mock_price_oracle::MockPriceOracle::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "PriceSet",
+        "type": "ghost_orders::mock_price_oracle::MockPriceOracle::PriceSet",
+        "kind": "nested"
+      }
+    ]
+  }
+]
