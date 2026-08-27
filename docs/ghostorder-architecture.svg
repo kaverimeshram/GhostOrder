@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" width="900" height="620" font-family="'Segoe UI', system-ui, sans-serif">
+  <!-- Background -->
+  <rect width="900" height="620" fill="#ffffff" rx="12"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">GhostOrder — Architecture</text>
+  <text x="450" y="58" text-anchor="middle" font-size="13" fill="#64748b">Starknet Sepolia · Cairo 2.20</text>
+
+  <!-- === LANE BACKGROUNDS === -->
+  <!-- User lane -->
+  <rect x="20" y="80" width="160" height="480" rx="8" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.5"/>
+  <text x="100" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#0369a1">USER</text>
+
+  <!-- GhostEscrow lane -->
+  <rect x="200" y="80" width="200" height="480" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.5"/>
+  <text x="300" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#6d28d9">GHOST ESCROW</text>
+
+  <!-- Oracle lane -->
+  <rect x="420" y="80" width="180" height="480" rx="8" fill="#fef9c3" stroke="#fde047" stroke-width="1.5"/>
+  <text x="510" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#a16207">PRICE ORACLE</text>
+
+  <!-- Settlement lane -->
+  <rect x="620" y="80" width="180" height="480" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+  <text x="710" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#166534">SETTLEMENT</text>
+
+  <!-- Keeper label (outside, top right) -->
+  <rect x="820" y="80" width="60" height="60" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="850" y="106" text-anchor="middle" font-size="11" font-weight="600" fill="#991b1b">KEEPER</text>
+  <text x="850" y="122" text-anchor="middle" font-size="10" fill="#991b1b">executor</text>
+
+  <!-- ===== STEP 1: approve + create_order ===== -->
+  <text x="20" y="148" font-size="10" fill="#64748b">①</text>
+  <!-- User box -->
+  <rect x="30" y="155" width="120" height="44" rx="6" fill="#0ea5e9" stroke="none"/>
+  <text x="90" y="173" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">User Wallet</text>
+  <text x="90" y="188" text-anchor="middle" font-size="10" fill="#e0f2fe">approve(escrow, amount)</text>
+
+  <!-- Arrow user → escrow -->
+  <line x1="150" y1="177" x2="198" y2="177" stroke="#0ea5e9" stroke-width="2" marker-end="url(#arr-blue)"/>
+  <text x="174" y="170" text-anchor="middle" font-size="9" fill="#0369a1">create_order()</text>
+
+  <!-- Escrow: stores order -->
+  <rect x="210" y="155" width="178" height="44" rx="6" fill="#7c3aed" stroke="none"/>
+  <text x="299" y="173" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Store Order</text>
+  <text x="299" y="188" text-anchor="middle" font-size="10" fill="#ddd6fe">status = Active</text>
+
+  <!-- Escrow: transfer_from annotation -->
+  <text x="299" y="218" text-anchor="middle" font-size="10" fill="#7c3aed">transfer_from(user → escrow)</text>
+  <line x1="299" y1="199" x2="299" y2="213" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+  <!-- ===== STEP 2: is_order_executable ===== -->
+  <text x="20" y="248" font-size="10" fill="#64748b">②</text>
+  <rect x="30" y="255" width="120" height="36" rx="6" fill="#0ea5e9" stroke="none"/>
+  <text x="90" y="270" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">Check</text>
+  <text x="90" y="284" text-anchor="middle" font-size="10" fill="#e0f2fe">is_order_executable?</text>
+
+  <!-- Arrow user → escrow -->
+  <line x1="150" y1="273" x2="198" y2="273" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-blue)"/>
+
+  <!-- Escrow → Oracle -->
+  <line x1="388" y1="273" x2="418" y2="273" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arr-purple)"/>
+  <text x="403" y="265" text-anchor="middle" font-size="9" fill="#6d28d9">get_price()</text>
+
+  <!-- Oracle box -->
+  <rect x="430" y="255" width="148" height="36" rx="6" fill="#eab308" stroke="none"/>
+  <text x="504" y="270" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Mock Oracle</text>
+  <text x="504" y="284" text-anchor="middle" font-size="10" fill="#fef9c3">returns current_price</text>
+
+  <!-- Condition label -->
+  <text x="299" y="314" text-anchor="middle" font-size="10" fill="#7c3aed">current_price ≥ target_price ?</text>
+  <rect x="210" y="255" width="178" height="36" rx="6" fill="#7c3aed" stroke="none"/>
+  <text x="299" y="270" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Condition Check</text>
+  <text x="299" y="284" text-anchor="middle" font-size="10" fill="#ddd6fe">oracle query</text>
+
+  <!-- ===== STEP 3: execute_order ===== -->
+  <text x="20" y="342" font-size="10" fill="#64748b">③</text>
+  <!-- Keeper box -->
+  <rect x="820" y="347" width="60" height="44" rx="6" fill="#dc2626" stroke="none"/>
+  <text x="850" y="365" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">Keeper</text>
+  <text x="850" y="380" text-anchor="middle" font-size="10" fill="#fecaca">execute</text>
+
+  <!-- Arrow keeper → escrow (long) -->
+  <path d="M 820 369 L 400 369 L 400 355 L 388 355" stroke="#dc2626" stroke-width="2" fill="none" marker-end="url(#arr-red)"/>
+  <text x="600" y="362" text-anchor="middle" font-size="9" fill="#dc2626">execute_order(order_id)</text>
+
+  <rect x="210" y="343" width="178" height="44" rx="6" fill="#7c3aed" stroke="none"/>
+  <text x="299" y="361" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Execute Order</text>
+  <text x="299" y="376" text-anchor="middle" font-size="10" fill="#ddd6fe">assert price condition</text>
+
+  <!-- ===== STEP 4: transfer to settlement ===== -->
+  <text x="20" y="418" font-size="10" fill="#64748b">④</text>
+  <!-- Escrow → Settlement -->
+  <line x1="388" y1="427" x2="618" y2="427" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr-green)"/>
+  <text x="503" y="419" text-anchor="middle" font-size="9" fill="#166534">transfer token_in</text>
+
+  <rect x="210" y="413" width="178" height="36" rx="6" fill="#7c3aed" stroke="none"/>
+  <text x="299" y="429" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Transfer token_in</text>
+  <text x="299" y="443" text-anchor="middle" font-size="10" fill="#ddd6fe">→ MockSettlement</text>
+
+  <rect x="630" y="413" width="148" height="36" rx="6" fill="#16a34a" stroke="none"/>
+  <text x="704" y="429" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Mock Settlement</text>
+  <text x="704" y="443" text-anchor="middle" font-size="10" fill="#dcfce7">receives token_in</text>
+
+  <!-- ===== STEP 5: settle → user receives token_out ===== -->
+  <text x="20" y="476" font-size="10" fill="#64748b">⑤</text>
+  <!-- Settlement → User -->
+  <path d="M 630 487 L 200 487 L 200 500 L 150 500" stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#arr-blue)"/>
+  <text x="390" y="480" text-anchor="middle" font-size="9" fill="#166534">settle(recipient = order.owner)</text>
+
+  <rect x="630" y="473" width="148" height="36" rx="6" fill="#16a34a" stroke="none"/>
+  <text x="704" y="489" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">settle()</text>
+  <text x="704" y="503" text-anchor="middle" font-size="10" fill="#dcfce7">sends token_out → owner</text>
+
+  <rect x="30" y="483" width="120" height="36" rx="6" fill="#0ea5e9" stroke="none"/>
+  <text x="90" y="499" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Receives</text>
+  <text x="90" y="513" text-anchor="middle" font-size="10" fill="#e0f2fe">token_out ✓</text>
+
+  <!-- ===== STEP 6: mark Executed ===== -->
+  <text x="20" y="542" font-size="10" fill="#64748b">⑥</text>
+  <rect x="210" y="535" width="178" height="36" rx="6" fill="#4f46e5" stroke="none"/>
+  <text x="299" y="551" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">status = Executed</text>
+  <text x="299" y="565" text-anchor="middle" font-size="10" fill="#c7d2fe">immutable · no re-execute</text>
+
+  <!-- Cancel path annotation -->
+  <rect x="30" y="555" width="120" height="36" rx="6" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="90" y="571" text-anchor="middle" font-size="11" fill="#64748b">cancel_order()</text>
+  <text x="90" y="585" text-anchor="middle" font-size="10" fill="#94a3b8">refunds token_in</text>
+  <text x="90" y="598" text-anchor="middle" font-size="9" fill="#94a3b8">(owner only · Active)</text>
+
+  <!-- ===== DEFS: arrowheads ===== -->
+  <defs>
+    <marker id="arr-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#0ea5e9"/>
+    </marker>
+    <marker id="arr-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+</svg>
