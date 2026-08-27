@@ -1,78 +1,70 @@
 import React, { useState } from 'react';
-import { WalletProvider, useWallet } from './context/WalletContext';
-import { OrderProvider, useOrders } from './context/OrderContext';
+import { WalletProvider } from './context/WalletContext';
+import { OrderProvider } from './context/OrderContext';
 import { Header } from './components/Header';
+import { Hero } from './components/Hero';
+import { TrustStrip } from './components/TrustStrip';
+import { HowItWorks } from './components/HowItWorks';
+import { Features } from './components/Features';
 import { Dashboard } from './components/Dashboard';
 import { OrderList } from './components/OrderList';
+import { ContractsSection } from './components/ContractsSection';
+import { Footer } from './components/Footer';
 import { CreateOrderModal } from './components/CreateOrderModal';
 import { OrderDetailsModal } from './components/OrderDetailsModal';
 import { OnChainOrder } from './types/contracts';
-import { NETWORK_CONFIG, CONTRACT_ADDRESSES } from './config/contracts';
-import { Terminal, Shield, Cpu, ExternalLink } from 'lucide-react';
 
 const MainApp: React.FC = () => {
-  const { refreshOrders, refreshOrders: triggerRefresh } = useOrders();
-  const { refreshBalance } = useWallet();
-
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [selectedOrder, setSelectedOrder] = useState<OnChainOrder | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  const handleRefreshAll = async () => {
-    setIsRefreshing(true);
-    try {
-      await Promise.all([triggerRefresh(), refreshBalance()]);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsRefreshing(false);
+  const scrollToSection = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-white flex flex-col justify-between selection:bg-white selection:text-black">
-      {/* Top Header */}
+    <div className="min-h-screen bg-[#050505] text-[#FFFFFF] flex flex-col justify-between selection:bg-[var(--accent-blue)] selection:text-white">
       <div>
+        {/* Header */}
         <Header
           onOpenCreateOrder={() => setIsCreateModalOpen(true)}
-          onRefresh={handleRefreshAll}
-          isRefreshing={isRefreshing}
+          onScrollToSection={scrollToSection}
         />
 
-        {/* Hero Dashboard */}
+        {/* Hero Section */}
+        <Hero
+          onOpenCreateOrder={() => setIsCreateModalOpen(true)}
+          onScrollToSection={scrollToSection}
+        />
+
+        {/* Trust / Protocol Bar */}
+        <TrustStrip />
+
+        {/* How It Works Section */}
+        <HowItWorks
+          onOpenCreateOrder={() => setIsCreateModalOpen(true)}
+        />
+
+        {/* Security & Features Section */}
+        <Features />
+
+        {/* Dashboard & On-Chain Order Management */}
         <Dashboard onOpenCreateOrder={() => setIsCreateModalOpen(true)} />
 
-        {/* Live Orders Table */}
+        {/* Orders Table */}
         <main>
           <OrderList onSelectOrder={(order) => setSelectedOrder(order)} />
         </main>
+
+        {/* Deployed Smart Contracts */}
+        <ContractsSection />
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-primary)] py-8 px-6 text-xs text-[var(--text-muted)] mt-12">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
-          <div className="flex items-center gap-2">
-            <Terminal size={14} className="text-white" />
-            <span className="text-white font-bold">GHOSTORDER PROTOCOL</span>
-            <span>//</span>
-            <span>Cairo 2.9 On-Chain Engine</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <a
-              href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${CONTRACT_ADDRESSES.ghostEscrow}`}
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-white transition flex items-center gap-1"
-            >
-              <span>Escrow Explorer</span>
-              <ExternalLink size={10} />
-            </a>
-            <span>•</span>
-            <span>Network: {NETWORK_CONFIG.networkName}</span>
-          </div>
-        </div>
-      </footer>
+      <Footer onScrollToSection={scrollToSection} />
 
       {/* Modals */}
       <CreateOrderModal

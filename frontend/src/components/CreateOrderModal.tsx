@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useWallet } from '../context/WalletContext';
 import { useOrders } from '../context/OrderContext';
 import { SUPPORTED_TOKENS, NETWORK_CONFIG } from '../config/contracts';
-import { X, ArrowDown, ExternalLink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { X, ArrowRight, ExternalLink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 interface CreateOrderModalProps {
   isOpen: boolean;
@@ -41,7 +41,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
     }
 
     if (numAmountIn <= 0) {
-      setLocalError('Please enter a valid input amount.');
+      setLocalError('Please enter a valid amount.');
       return;
     }
     if (numTargetPrice <= 0) {
@@ -74,54 +74,53 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-6 py-4">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-bold uppercase tracking-wider text-white">
-              Create Conditional Order
-            </span>
-          </div>
+      <div className="modal-content-card">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-6 py-4 bg-[#080D18]">
+          <h3 className="font-sans text-base font-bold text-white">
+            Create Conditional Order
+          </h3>
+
           <button
             onClick={handleClose}
-            className="text-[var(--text-muted)] hover:text-white"
+            className="text-[var(--text-muted)] hover:text-white transition p-1"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Content Body */}
-        <div className="p-6">
-          {/* Active Transaction Banner */}
+        {/* Modal Body */}
+        <div className="p-6 space-y-5 bg-[#050505]">
+          {/* Active Transaction Status Banner */}
           {txStatus.stage !== 'idle' && (
-            <div className="mb-6 rounded border border-[var(--border-strong)] bg-[var(--bg-tertiary)] p-4 font-mono text-xs">
+            <div className="rounded-xl border border-[rgba(79,124,255,0.3)] bg-[#080D18] p-4 font-mono text-xs shadow-[0_0_20px_rgba(79,124,255,0.15)]">
               <div className="flex items-center gap-2">
                 {txStatus.stage === 'submitting' || txStatus.stage === 'waiting' ? (
-                  <Loader2 size={16} className="animate-spin text-[var(--color-executable)]" />
+                  <Loader2 size={16} className="animate-spin text-[var(--accent-blue)]" />
                 ) : txStatus.stage === 'confirmed' ? (
-                  <CheckCircle2 size={16} className="text-[var(--color-executed)]" />
+                  <CheckCircle2 size={16} className="text-emerald-400" />
                 ) : (
-                  <AlertCircle size={16} className="text-[var(--color-cancelled)]" />
+                  <AlertCircle size={16} className="text-red-400" />
                 )}
                 <span className="font-semibold text-white">
-                  {txStatus.stage === 'submitting' && '1/3 Sign Transaction in Wallet'}
-                  {txStatus.stage === 'waiting' && '2/3 Confirming on Starknet Sepolia'}
+                  {txStatus.stage === 'submitting' && '1/3 Sign in Starknet Wallet'}
+                  {txStatus.stage === 'waiting' && '2/3 Confirming on Sepolia Block'}
                   {txStatus.stage === 'confirmed' && '3/3 Order Created & Escrow Locked'}
-                  {txStatus.stage === 'error' && 'Transaction Reverted'}
+                  {txStatus.stage === 'error' && 'Transaction Failed'}
                 </span>
               </div>
 
-              <div className="mt-2 text-[var(--text-secondary)]">
+              <div className="mt-2 text-[var(--text-secondary)] leading-relaxed">
                 {txStatus.message}
               </div>
 
               {txStatus.txHash && (
-                <div className="mt-3 flex items-center gap-1 border-t border-[var(--border-subtle)] pt-2">
+                <div className="mt-3 flex items-center gap-1 border-t border-[rgba(255,255,255,0.06)] pt-2">
                   <a
                     href={`${NETWORK_CONFIG.blockExplorerUrl}/tx/${txStatus.txHash}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 text-[var(--color-executable)] hover:underline"
+                    className="flex items-center gap-1 text-[var(--accent-blue)] hover:underline"
                   >
                     <span>View Transaction on Starkscan</span>
                     <ExternalLink size={12} />
@@ -132,148 +131,129 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
           )}
 
           {localError && (
-            <div className="mb-4 flex items-center gap-2 rounded border border-[var(--color-cancelled)]/30 bg-[var(--color-cancelled-bg)] p-3 text-xs text-[var(--color-cancelled)]">
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-950/20 p-3 text-xs text-red-400">
               <AlertCircle size={14} />
               <span>{localError}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* FROM (Input Token & Amount) */}
-            <div className="card-terminal p-3.5 space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
-                <span className="font-mono uppercase font-semibold">From (Escrow Deposit)</span>
-                <span className="font-mono">
-                  Balance: {strkBalanceFormatted} STRK
-                </span>
+          <form onSubmit={handleSubmit} className="space-y-4 font-mono">
+            {/* TOKEN TO ESCROW */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-[var(--text-muted)]">
+                <span className="uppercase font-semibold">TOKEN TO ESCROW</span>
+                <span>Balance: {strkBalanceFormatted} STRK</span>
               </div>
+              <div className="flex gap-2">
+                <select
+                  value={tokenIn}
+                  onChange={(e) => setTokenIn(e.target.value)}
+                  className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#0C1322] px-4 py-2.5 text-sm font-bold text-white outline-none cursor-pointer"
+                  disabled={isSubmitting}
+                >
+                  <option value={SUPPORTED_TOKENS[0].address}>STRK</option>
+                </select>
 
-              <div className="flex items-center gap-2">
                 <input
                   type="number"
                   step="0.001"
                   min="0.0001"
                   value={amountIn}
                   onChange={(e) => setAmountIn(e.target.value)}
-                  placeholder="0.0"
-                  className="input-terminal flex-1 text-base font-bold"
+                  placeholder="0.0100"
+                  className="input-premium flex-1 text-sm font-bold"
                   disabled={isSubmitting}
                   required
                 />
+              </div>
+            </div>
 
+            {/* OUTPUT TOKEN */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-[var(--text-muted)]">
+                <span className="uppercase font-semibold">OUTPUT TOKEN</span>
+                <span>Est. Output: {estimatedOutput} USDC</span>
+              </div>
+              <div className="flex gap-2">
                 <select
-                  value={tokenIn}
-                  onChange={(e) => setTokenIn(e.target.value)}
-                  className="select-terminal font-semibold"
+                  value={tokenOut}
+                  onChange={(e) => setTokenOut(e.target.value)}
+                  className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#0C1322] px-4 py-2.5 text-sm font-bold text-white outline-none cursor-pointer"
                   disabled={isSubmitting}
                 >
-                  <option value={SUPPORTED_TOKENS[0].address}>STRK</option>
+                  <option value={SUPPORTED_TOKENS[1].address}>USDC</option>
+                  <option value={SUPPORTED_TOKENS[2].address}>ETH</option>
                 </select>
-              </div>
-            </div>
 
-            {/* Down Arrow Divider */}
-            <div className="flex justify-center -my-2 relative z-10">
-              <div className="rounded-full border border-[var(--border-strong)] bg-[var(--bg-tertiary)] p-1.5 text-[var(--text-muted)]">
-                <ArrowDown size={14} />
-              </div>
-            </div>
-
-            {/* TO (Output Token) */}
-            <div className="card-terminal p-3.5 space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
-                <span className="font-mono uppercase font-semibold">To (Target Settlement)</span>
-                <span className="font-mono">Est. Output: {estimatedOutput} USDC</span>
-              </div>
-
-              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value={estimatedOutput}
-                  className="input-terminal flex-1 bg-[var(--bg-secondary)] text-base font-bold text-[var(--text-secondary)]"
+                  className="input-premium flex-1 text-sm font-bold text-[var(--text-secondary)] cursor-not-allowed"
                 />
-
-                <select
-                  value={tokenOut}
-                  onChange={(e) => setTokenOut(e.target.value)}
-                  className="select-terminal font-semibold"
-                  disabled={isSubmitting}
-                >
-                  <option value={SUPPORTED_TOKENS[1].address}>USDC (Mock)</option>
-                  <option value={SUPPORTED_TOKENS[2].address}>ETH</option>
-                </select>
               </div>
             </div>
 
-            {/* PRICE CONDITION */}
-            <div className="card-terminal p-3.5 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-mono uppercase font-semibold text-[var(--text-muted)]">
-                  Price Trigger Condition
-                </span>
-                <span className="font-mono text-[var(--text-secondary)]">
-                  Oracle Price: <strong className="text-white">${oraclePriceFormatted}</strong>
-                </span>
+            {/* TARGET PRICE */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-[var(--text-muted)]">
+                <span className="uppercase font-semibold">TARGET PRICE</span>
+                <span>Oracle: ${oraclePriceFormatted}</span>
               </div>
-
-              <div className="text-xs text-[var(--text-secondary)]">
-                Execute when STRK price is greater than or equal to:
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={targetPrice}
-                    onChange={(e) => setTargetPrice(e.target.value)}
-                    placeholder="2.00"
-                    className="input-terminal pl-7"
-                    disabled={isSubmitting}
-                    required
-                  />
-                  <span className="absolute left-3 top-2.5 font-mono text-sm text-[var(--text-muted)]">
-                    $
-                  </span>
+              <div className="flex gap-2 items-center">
+                <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#0C1322] px-3.5 py-2.5 text-sm font-bold text-white">
+                  ≥
                 </div>
-                <span className="font-mono text-xs text-[var(--text-muted)]">USDC / STRK</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={targetPrice}
+                  onChange={(e) => setTargetPrice(e.target.value)}
+                  placeholder="2.00"
+                  className="input-premium flex-1 text-sm font-bold"
+                  disabled={isSubmitting}
+                  required
+                />
               </div>
             </div>
 
-            {/* Order Summary Specs */}
-            <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] p-3 font-mono text-xs space-y-1.5 text-[var(--text-secondary)]">
-              <div className="flex justify-between">
-                <span>Escrow Lock:</span>
-                <span className="text-white font-medium">{amountIn} STRK</span>
+            {/* Order Preview Box */}
+            <div className="rounded-xl border border-[rgba(79,124,255,0.2)] bg-[#080D18] p-4 text-xs space-y-1 font-sans">
+              <div className="font-mono text-[11px] font-semibold text-[var(--accent-blue)] uppercase">
+                You are creating:
               </div>
-              <div className="flex justify-between">
-                <span>Min Output:</span>
-                <span className="text-white font-medium">{minAmountOut} USDC</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Order Expiry:</span>
-                <span className="text-white font-medium">{expiryHours} Hours</span>
-              </div>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
+                If STRK price reaches <strong className="text-white">${targetPrice || '2.00'}</strong>,{' '}
+                <strong className="text-white">{amountIn || '0.0100'} STRK</strong> will be used for settlement.
+              </p>
             </div>
 
-            {/* Action Buttons */}
-            <div className="pt-2">
+            {/* Modal Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-3 font-sans">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={isSubmitting}
+                className="btn-secondary text-xs py-2.5 px-4"
+              >
+                Cancel
+              </button>
+
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-primary w-full py-3 text-sm font-semibold tracking-wide uppercase"
+                className="btn-primary text-xs py-2.5 px-5 font-semibold"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 size={16} className="animate-spin" />
-                    <span>Processing on Starknet...</span>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Broadcasting...</span>
                   </span>
                 ) : !isConnected ? (
-                  'Connect Wallet to Create Order'
+                  'Connect Wallet'
                 ) : (
-                  'Approve STRK & Create Order'
+                  <span>Create Order →</span>
                 )}
               </button>
             </div>

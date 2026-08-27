@@ -1,107 +1,96 @@
 import React from 'react';
 import { useWallet } from '../context/WalletContext';
 import { NETWORK_CONFIG } from '../config/contracts';
-import { Wallet, ExternalLink, RefreshCw, Plus } from 'lucide-react';
+import { Shield, ExternalLink, Wallet, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   onOpenCreateOrder: () => void;
-  onRefresh: () => void;
-  isRefreshing: boolean;
+  onScrollToSection: (sectionId: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenCreateOrder,
-  onRefresh,
-  isRefreshing,
+  onScrollToSection,
 }) => {
-  const {
-    address,
-    isConnected,
-    isConnecting,
-    strkBalanceFormatted,
-    connect,
-    disconnect,
-  } = useWallet();
+  const { address, isConnected, isConnecting, connect, disconnect } = useWallet();
 
-  const shortenAddress = (addr: string) => {
+  const shorten = (addr: string) => {
     if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
   return (
-    <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6 py-4">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        {/* Brand */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-lg font-bold tracking-tight text-white">
-              GHOST<span className="text-[var(--text-muted)]">//</span>ORDER
-            </span>
+    <header className="sticky top-0 z-50 border-b border-[rgba(255,255,255,0.08)] bg-[#050505]/85 backdrop-blur-md transition-all">
+      <div className="container-custom flex h-16 items-center justify-between">
+        {/* Left: GhostOrder Logo */}
+        <div
+          onClick={() => onScrollToSection('hero')}
+          className="flex items-center gap-3 cursor-pointer group"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(79,124,255,0.3)] bg-[#080D18] text-[var(--accent-blue)] shadow-[0_0_15px_rgba(79,124,255,0.25)] group-hover:border-[var(--accent-cyan)] transition">
+            <Shield size={18} />
           </div>
-
-          <div className="hidden items-center gap-2 rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2.5 py-1 text-xs sm:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-executed)]"></span>
-            <span className="font-mono text-[var(--text-secondary)]">
-              {NETWORK_CONFIG.networkName}
-            </span>
-          </div>
+          <span className="font-sans text-base font-bold tracking-tight text-white">
+            Ghost<span className="text-[var(--accent-blue)]">Order</span>
+          </span>
         </div>
 
-        {/* Right Controls */}
-        <div className="flex items-center gap-3">
-          {/* Refresh Button */}
+        {/* Center: Navigation Links */}
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--text-secondary)]">
           <button
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="flex h-9 w-9 items-center justify-center rounded border border-[var(--border-strong)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] transition hover:border-[var(--border-focus)] hover:text-white"
-            title="Refresh on-chain state"
+            onClick={() => onScrollToSection('dashboard')}
+            className="hover:text-white transition"
           >
-            <RefreshCw
-              size={14}
-              className={isRefreshing ? 'animate-spin text-white' : ''}
-            />
+            Dashboard
           </button>
-
-          {/* Create Order Primary Action */}
           <button
-            onClick={onOpenCreateOrder}
-            className="btn-primary flex items-center gap-1.5 text-xs font-semibold"
+            onClick={() => onScrollToSection('how-it-works')}
+            className="hover:text-white transition"
           >
-            <Plus size={14} />
-            <span>Create Order</span>
+            How It Works
           </button>
+          <button
+            onClick={() => onScrollToSection('contracts')}
+            className="hover:text-white transition"
+          >
+            Contracts
+          </button>
+        </nav>
 
-          {/* Wallet Connection */}
+        {/* Right: Network & Wallet Button */}
+        <div className="flex items-center gap-3.5">
+          {/* Network indicator */}
+          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[rgba(255,255,255,0.08)] bg-[#080D18] px-3 py-1 text-xs text-[var(--text-secondary)]">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+            <span className="font-mono text-[11px]">{NETWORK_CONFIG.networkName}</span>
+          </div>
+
+          {/* Wallet button */}
           {isConnected && address ? (
             <div className="flex items-center gap-2">
-              <div className="hidden flex-col items-end text-right sm:flex">
-                <span className="font-mono text-xs text-[var(--text-primary)]">
-                  {strkBalanceFormatted} STRK
-                </span>
-                <a
-                  href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${address}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                >
-                  <span>{shortenAddress(address)}</span>
-                  <ExternalLink size={10} />
-                </a>
-              </div>
+              <a
+                href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${address}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-[rgba(79,124,255,0.35)] bg-[#080D18] px-3.5 py-1.5 font-mono text-xs font-semibold text-white hover:border-[var(--accent-blue)] transition shadow-[0_0_15px_rgba(79,124,255,0.2)]"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-cyan)]"></span>
+                <span>{shorten(address)}</span>
+              </a>
 
               <button
                 onClick={disconnect}
-                className="btn-secondary text-xs"
+                className="flex items-center justify-center h-8 w-8 rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#080D18] text-[var(--text-secondary)] hover:text-white hover:border-[rgba(255,255,255,0.2)] transition"
                 title="Disconnect Wallet"
               >
-                Disconnect
+                <LogOut size={13} />
               </button>
             </div>
           ) : (
             <button
               onClick={connect}
               disabled={isConnecting}
-              className="btn-secondary text-xs"
+              className="btn-primary text-xs py-2 px-4"
             >
               <Wallet size={14} />
               <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>

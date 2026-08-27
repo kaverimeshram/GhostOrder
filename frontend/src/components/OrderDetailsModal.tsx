@@ -6,12 +6,11 @@ import { useWallet } from '../context/WalletContext';
 import {
   X,
   ExternalLink,
-  CheckCircle2,
-  XCircle,
   Play,
+  XCircle,
   Copy,
-  Clock,
   Check,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface OrderDetailsModalProps {
@@ -36,7 +35,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   const formattedAmountIn = (Number(order.amountIn) / 1e18).toFixed(4);
   const formattedMinOut = (Number(order.minAmountOut) / 1e18).toFixed(4);
   const formattedTargetPrice = (Number(order.targetPrice) / 1e18).toFixed(2);
-  const expiryDate = new Date(Number(order.expiry) * 1000).toLocaleString();
+  const orderNum = order.id.toString().padStart(3, '0');
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -68,20 +67,17 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     }
   };
 
-  // Determine stage progression for visual lifecycle
-  const isCancelled = order.status === OrderStatus.Cancelled;
-  const isExecuted = order.status === OrderStatus.Executed;
-  const isExecutable = order.isExecutable && order.status === OrderStatus.Active;
+  const shorten = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content max-w-2xl">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-6 py-4">
+      <div className="modal-content-card">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-6 py-4 bg-[#080D18]">
           <div className="flex items-center gap-3">
-            <span className="font-mono text-base font-bold text-white">
-              Order #{order.id.toString()}
-            </span>
+            <h3 className="font-mono text-base font-bold text-white">
+              Order #{orderNum}
+            </h3>
 
             {order.status === OrderStatus.Executed && (
               <span className="badge-status badge-executed">Executed</span>
@@ -92,192 +88,92 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             {order.status === OrderStatus.Active && (
               <span
                 className={`badge-status ${
-                  order.isExecutable ? 'badge-executable' : 'badge-pending'
+                  order.isExecutable ? 'badge-ready' : 'badge-active'
                 }`}
               >
-                {order.isExecutable ? 'Executable' : 'Pending'}
+                {order.isExecutable ? 'Ready' : 'Active'}
               </span>
             )}
           </div>
 
           <button
             onClick={onClose}
-            className="text-[var(--text-muted)] hover:text-white"
+            className="text-[var(--text-muted)] hover:text-white transition p-1"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Visual Lifecycle Progression Tracker */}
-          <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] p-4">
-            <div className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              Protocol Lifecycle Progression
-            </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              {/* Step 1: Created */}
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-executed)]/20 text-[var(--color-executed)] font-mono text-xs font-bold border border-[var(--color-executed)]">
-                  ✓
-                </div>
-                <span className="mt-1 font-mono text-[10px] font-semibold text-white">
-                  CREATED
-                </span>
-                <span className="text-[9px] text-[var(--text-muted)]">
-                  Escrow Locked
-                </span>
-              </div>
-
-              {/* Step 2: Pending */}
-              <div className="flex flex-col items-center text-center">
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full font-mono text-xs font-bold border ${
-                    isCancelled || isExecuted || isExecutable
-                      ? 'bg-[var(--color-executed)]/20 text-[var(--color-executed)] border-[var(--color-executed)]'
-                      : 'bg-[var(--color-pending-bg)] text-white border-[var(--border-focus)]'
-                  }`}
-                >
-                  {isCancelled || isExecuted || isExecutable ? '✓' : '2'}
-                </div>
-                <span className="mt-1 font-mono text-[10px] font-semibold text-white">
-                  PENDING
-                </span>
-                <span className="text-[9px] text-[var(--text-muted)]">
-                  Oracle Monitored
-                </span>
-              </div>
-
-              {/* Step 3: Trigger Condition */}
-              <div className="flex flex-col items-center text-center">
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full font-mono text-xs font-bold border ${
-                    isCancelled
-                      ? 'bg-[var(--color-cancelled-bg)] text-[var(--color-cancelled)] border-[var(--color-cancelled)]'
-                      : isExecuted
-                      ? 'bg-[var(--color-executed)]/20 text-[var(--color-executed)] border-[var(--color-executed)]'
-                      : isExecutable
-                      ? 'bg-[var(--color-executable-bg)] text-[var(--color-executable)] border-[var(--color-executable)] animate-pulse-subtle'
-                      : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-subtle)]'
-                  }`}
-                >
-                  {isCancelled ? '✕' : isExecuted ? '✓' : '3'}
-                </div>
-                <span className="mt-1 font-mono text-[10px] font-semibold text-white">
-                  {isCancelled ? 'CANCELLED' : 'EXECUTABLE'}
-                </span>
-                <span className="text-[9px] text-[var(--text-muted)]">
-                  {isCancelled ? 'Refund Issued' : 'Condition Met'}
-                </span>
-              </div>
-
-              {/* Step 4: Final Settlement */}
-              <div className="flex flex-col items-center text-center">
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full font-mono text-xs font-bold border ${
-                    isExecuted
-                      ? 'bg-[var(--color-executed)] text-black border-[var(--color-executed)] font-bold'
-                      : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-subtle)]'
-                  }`}
-                >
-                  {isExecuted ? '✓' : '4'}
-                </div>
-                <span className="mt-1 font-mono text-[10px] font-semibold text-white">
-                  SETTLED
-                </span>
-                <span className="text-[9px] text-[var(--text-muted)]">
-                  {isExecuted ? 'Payout Complete' : 'Awaiting Keeper'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* On-Chain Specs Grid */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {/* Input Asset */}
-            <div className="card-terminal p-3.5 space-y-1">
-              <div className="font-mono text-[10px] uppercase text-[var(--text-muted)]">
-                Input Asset (Locked in Escrow)
-              </div>
-              <div className="font-mono text-sm font-bold text-white">
-                {formattedAmountIn} {tokenInInfo.symbol}
-              </div>
-              <div className="font-mono text-[10px] text-[var(--text-secondary)] truncate">
-                Address: {order.tokenIn}
-              </div>
-            </div>
-
-            {/* Target Output */}
-            <div className="card-terminal p-3.5 space-y-1">
-              <div className="font-mono text-[10px] uppercase text-[var(--text-muted)]">
-                Target Output Asset
-              </div>
-              <div className="font-mono text-sm font-bold text-white">
-                {formattedMinOut} {tokenOutInfo.symbol}
-              </div>
-              <div className="font-mono text-[10px] text-[var(--text-secondary)] truncate">
-                Address: {order.tokenOut}
-              </div>
-            </div>
-
-            {/* Price Condition */}
-            <div className="card-terminal p-3.5 space-y-1">
-              <div className="font-mono text-[10px] uppercase text-[var(--text-muted)]">
-                Target Execution Price
-              </div>
-              <div className="font-mono text-sm font-bold text-white">
-                ≥ ${formattedTargetPrice} USDC
-              </div>
-              <div className="font-mono text-[10px] text-[var(--text-secondary)]">
-                Live Oracle: ${oraclePriceFormatted}
-              </div>
-            </div>
-
-            {/* Expiry */}
-            <div className="card-terminal p-3.5 space-y-1">
-              <div className="font-mono text-[10px] uppercase text-[var(--text-muted)]">
-                Order Expiry Timestamp
-              </div>
-              <div className="font-mono text-xs font-semibold text-white">
-                {expiryDate}
-              </div>
-              <div className="font-mono text-[10px] text-[var(--text-muted)]">
-                Unix: {order.expiry.toString()}
-              </div>
-            </div>
-          </div>
-
-          {/* Owner & Explorer Links */}
-          <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3.5 font-mono text-xs space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[var(--text-muted)]">Order Owner:</span>
-              <div className="flex items-center gap-1.5 text-white">
-                <span className="truncate max-w-[200px] sm:max-w-[280px]">
-                  {order.owner}
-                </span>
+        {/* Body */}
+        <div className="p-6 space-y-5 bg-[#050505] font-mono text-xs">
+          {/* Main Grid Info */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="card-premium p-3.5 space-y-1">
+              <div className="text-[10px] text-[var(--text-muted)] uppercase">OWNER</div>
+              <div className="text-xs font-bold text-white flex items-center justify-between">
+                <span>{shorten(order.owner)}</span>
                 <button
                   onClick={() => handleCopy(order.owner, 'owner')}
                   className="text-[var(--text-muted)] hover:text-white"
-                  title="Copy Owner Address"
                 >
-                  {copiedField === 'owner' ? (
-                    <Check size={12} className="text-[var(--color-executed)]" />
-                  ) : (
-                    <Copy size={12} />
-                  )}
+                  {copiedField === 'owner' ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-2">
-              <span className="text-[var(--text-muted)]">GhostEscrow Contract:</span>
+            <div className="card-premium p-3.5 space-y-1">
+              <div className="text-[10px] text-[var(--text-muted)] uppercase">ESCROW AMOUNT</div>
+              <div className="text-xs font-bold text-white">
+                {formattedAmountIn} {tokenInInfo.symbol}
+              </div>
+            </div>
+
+            <div className="card-premium p-3.5 space-y-1">
+              <div className="text-[10px] text-[var(--text-muted)] uppercase">OUTPUT TOKEN</div>
+              <div className="text-xs font-bold text-white">
+                {tokenOutInfo.symbol} (Min: {formattedMinOut})
+              </div>
+            </div>
+
+            <div className="card-premium p-3.5 space-y-1">
+              <div className="text-[10px] text-[var(--text-muted)] uppercase">TARGET PRICE</div>
+              <div className="text-xs font-bold text-white">
+                ≥ ${formattedTargetPrice}
+              </div>
+            </div>
+
+            <div className="card-premium p-3.5 space-y-1 col-span-2">
+              <div className="text-[10px] text-[var(--text-muted)] uppercase">CURRENT ORACLE PRICE</div>
+              <div className="text-sm font-bold text-[var(--accent-cyan)]">
+                ${oraclePriceFormatted} USDC
+              </div>
+            </div>
+          </div>
+
+          {/* Contract Address Box */}
+          <div className="card-premium p-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[var(--text-muted)]">Contract Address:</span>
+              <div className="flex items-center gap-2 text-white">
+                <span>{shorten(CONTRACT_ADDRESSES.ghostEscrow)}</span>
+                <button
+                  onClick={() => handleCopy(CONTRACT_ADDRESSES.ghostEscrow, 'contract')}
+                  className="text-[var(--text-muted)] hover:text-white"
+                >
+                  {copiedField === 'contract' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-[rgba(255,255,255,0.04)] pt-2">
+              <span className="text-[var(--text-muted)]">Starkscan Explorer:</span>
               <a
                 href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${CONTRACT_ADDRESSES.ghostEscrow}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1 text-[var(--color-executable)] hover:underline"
+                className="flex items-center gap-1 text-[var(--accent-blue)] hover:underline"
               >
-                <span>View Escrow on Starkscan</span>
+                <span>View on Starkscan</span>
                 <ExternalLink size={12} />
               </a>
             </div>
@@ -285,33 +181,25 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
           {/* Actions */}
           {order.status === OrderStatus.Active && (
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3 pt-2 font-sans">
               {order.isExecutable && (
                 <button
                   onClick={handleExecute}
                   disabled={!isConnected || actionLoading === 'exec'}
-                  className="btn-success flex-1 py-2.5 font-semibold text-sm justify-center"
+                  className="btn-primary flex-1 text-xs py-2.5 font-semibold"
                 >
-                  <Play size={14} fill="currentColor" />
-                  <span>
-                    {actionLoading === 'exec'
-                      ? 'Settling on-chain...'
-                      : 'Execute & Settle Order'}
-                  </span>
+                  <Play size={13} fill="currentColor" />
+                  <span>{actionLoading === 'exec' ? 'Executing...' : 'Execute Order'}</span>
                 </button>
               )}
 
               <button
                 onClick={handleCancel}
                 disabled={!isConnected || actionLoading === 'cancel'}
-                className="btn-danger flex-1 py-2.5 font-semibold text-sm justify-center"
+                className="btn-action-cancel flex-1 text-xs py-2.5 font-semibold justify-center"
               >
                 <XCircle size={14} />
-                <span>
-                  {actionLoading === 'cancel'
-                    ? 'Cancelling on-chain...'
-                    : 'Cancel & Refund Escrow'}
-                </span>
+                <span>{actionLoading === 'cancel' ? 'Cancelling...' : 'Cancel Order'}</span>
               </button>
             </div>
           )}
