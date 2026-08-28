@@ -76,33 +76,33 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
     <div className="modal-overlay">
       <div className="modal-content-card">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-6 py-4 bg-[#080D18]">
-          <h3 className="font-sans text-base font-bold text-white">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-surface">
+          <h3 className="font-mono text-base font-bold text-text-primary tracking-wider uppercase">
             Create Conditional Order
           </h3>
 
           <button
             onClick={handleClose}
-            className="text-[var(--text-muted)] hover:text-white transition p-1"
+            className="text-text-muted hover:text-text-primary transition p-1 cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-5 bg-[#050505]">
+        <div className="p-6 space-y-5 bg-surface-elevated">
           {/* Active Transaction Status Banner */}
           {txStatus.stage !== 'idle' && (
-            <div className="rounded-xl border border-[rgba(79,124,255,0.3)] bg-[#080D18] p-4 font-mono text-xs shadow-[0_0_20px_rgba(79,124,255,0.15)]">
+            <div className="rounded-xl border border-accent/20 bg-bg-base p-4 font-mono text-xs">
               <div className="flex items-center gap-2">
                 {txStatus.stage === 'submitting' || txStatus.stage === 'waiting' ? (
-                  <Loader2 size={16} className="animate-spin text-[var(--accent-blue)]" />
+                  <Loader2 size={16} className="animate-spin text-accent" />
                 ) : txStatus.stage === 'confirmed' ? (
-                  <CheckCircle2 size={16} className="text-emerald-400" />
+                  <CheckCircle2 size={16} className="text-success" />
                 ) : (
-                  <AlertCircle size={16} className="text-red-400" />
+                  <AlertCircle size={16} className="text-danger" />
                 )}
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-text-primary">
                   {txStatus.stage === 'submitting' && '1/3 Sign in Starknet Wallet'}
                   {txStatus.stage === 'waiting' && '2/3 Confirming on Sepolia Block'}
                   {txStatus.stage === 'confirmed' && '3/3 Order Created & Escrow Locked'}
@@ -110,17 +110,17 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 </span>
               </div>
 
-              <div className="mt-2 text-[var(--text-secondary)] leading-relaxed">
+              <div className="mt-2 text-text-secondary leading-relaxed">
                 {txStatus.message}
               </div>
 
               {txStatus.txHash && (
-                <div className="mt-3 flex items-center gap-1 border-t border-[rgba(255,255,255,0.06)] pt-2">
+                <div className="mt-3 flex items-center gap-1 border-t border-border pt-2">
                   <a
                     href={`${NETWORK_CONFIG.blockExplorerUrl}/tx/${txStatus.txHash}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 text-[var(--accent-blue)] hover:underline"
+                    className="flex items-center gap-1 text-accent hover:underline"
                   >
                     <span>View Transaction on Starkscan</span>
                     <ExternalLink size={12} />
@@ -131,7 +131,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
           )}
 
           {localError && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-950/20 p-3 text-xs text-red-400">
+            <div className="flex items-center gap-2 rounded-lg border border-danger/25 bg-danger/5 p-3 text-xs text-danger font-mono">
               <AlertCircle size={14} />
               <span>{localError}</span>
             </div>
@@ -140,7 +140,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4 font-mono">
             {/* TOKEN TO ESCROW */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs text-[var(--text-muted)]">
+              <div className="flex justify-between text-xs text-text-muted">
                 <span className="uppercase font-semibold">TOKEN TO ESCROW</span>
                 <span>Balance: {strkBalanceFormatted} STRK</span>
               </div>
@@ -148,10 +148,10 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 <select
                   value={tokenIn}
                   onChange={(e) => setTokenIn(e.target.value)}
-                  className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#0C1322] px-4 py-2.5 text-sm font-bold text-white outline-none cursor-pointer"
+                  className="rounded-lg border border-border-strong bg-bg-base px-4 py-2.5 text-sm font-bold text-text-primary outline-none cursor-pointer focus:border-accent"
                   disabled={isSubmitting}
                 >
-                  <option value={SUPPORTED_TOKENS[0].address}>STRK</option>
+                  <option value={SUPPORTED_TOKENS[0].address} className="bg-surface text-text-primary">STRK</option>
                 </select>
 
                 <input
@@ -170,7 +170,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 
             {/* OUTPUT TOKEN */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs text-[var(--text-muted)]">
+              <div className="flex justify-between text-xs text-text-muted">
                 <span className="uppercase font-semibold">OUTPUT TOKEN</span>
                 <span>Est. Output: {estimatedOutput} USDC</span>
               </div>
@@ -178,30 +178,30 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 <select
                   value={tokenOut}
                   onChange={(e) => setTokenOut(e.target.value)}
-                  className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#0C1322] px-4 py-2.5 text-sm font-bold text-white outline-none cursor-pointer"
+                  className="rounded-lg border border-border-strong bg-bg-base px-4 py-2.5 text-sm font-bold text-text-primary outline-none cursor-pointer focus:border-accent"
                   disabled={isSubmitting}
                 >
-                  <option value={SUPPORTED_TOKENS[1].address}>USDC</option>
-                  <option value={SUPPORTED_TOKENS[2].address}>ETH</option>
+                  <option value={SUPPORTED_TOKENS[1].address} className="bg-surface text-text-primary">USDC</option>
+                  <option value={SUPPORTED_TOKENS[2].address} className="bg-surface text-text-primary">ETH</option>
                 </select>
 
                 <input
                   type="text"
                   readOnly
                   value={estimatedOutput}
-                  className="input-premium flex-1 text-sm font-bold text-[var(--text-secondary)] cursor-not-allowed"
+                  className="input-premium flex-1 text-sm font-bold text-text-secondary cursor-not-allowed"
                 />
               </div>
             </div>
 
             {/* TARGET PRICE */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs text-[var(--text-muted)]">
+              <div className="flex justify-between text-xs text-text-muted">
                 <span className="uppercase font-semibold">TARGET PRICE</span>
                 <span>Oracle: ${oraclePriceFormatted}</span>
               </div>
               <div className="flex gap-2 items-center">
-                <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#0C1322] px-3.5 py-2.5 text-sm font-bold text-white">
+                <div className="rounded-lg border border-border-strong bg-bg-base px-3.5 py-2.5 text-sm font-bold text-text-secondary">
                   ≥
                 </div>
                 <input
@@ -219,23 +219,23 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
             </div>
 
             {/* Order Preview Box */}
-            <div className="rounded-xl border border-[rgba(79,124,255,0.2)] bg-[#080D18] p-4 text-xs space-y-1 font-sans">
-              <div className="font-mono text-[11px] font-semibold text-[var(--accent-blue)] uppercase">
+            <div className="rounded-xl border border-accent/25 bg-bg-base p-4 text-xs space-y-1.5 font-sans">
+              <div className="font-mono text-[11px] font-semibold text-accent uppercase tracking-wider">
                 You are creating:
               </div>
-              <p className="text-[var(--text-secondary)] leading-relaxed">
-                If STRK price reaches <strong className="text-white">${targetPrice || '2.00'}</strong>,{' '}
-                <strong className="text-white">{amountIn || '0.0100'} STRK</strong> will be used for settlement.
+              <p className="text-text-secondary leading-relaxed">
+                If STRK price reaches <strong className="text-text-primary">${targetPrice || '2.00'}</strong>,{' '}
+                <strong className="text-text-primary">{amountIn || '0.0100'} STRK</strong> will be used for settlement.
               </p>
             </div>
 
-            {/* Modal Buttons */}
+            {/* Modal Actions */}
             <div className="flex items-center justify-end gap-3 pt-3 font-sans">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="btn-secondary text-xs py-2.5 px-4"
+                className="btn-secondary text-xs py-2.5 px-4 cursor-pointer"
               >
                 Cancel
               </button>
@@ -243,7 +243,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-primary text-xs py-2.5 px-5 font-semibold"
+                className="btn-primary text-xs py-2.5 px-5 font-semibold cursor-pointer"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">

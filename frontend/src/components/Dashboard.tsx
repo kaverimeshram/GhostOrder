@@ -16,69 +16,69 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenCreateOrder }) => {
   const totalEscrowedFormatted = (Number(totalEscrowedBN) / 1e18).toFixed(3);
 
   return (
-    <div id="dashboard" className="pt-16 pb-6">
+    <div className="pt-16 pb-0 bg-[#06080c] w-full">
       <div className="container-custom">
         {/* Header and Create Order CTA */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 border-b border-[rgba(255,255,255,0.08)] pb-6">
-          <div>
-            <div className="text-xs font-mono text-[var(--accent-blue)] uppercase tracking-wider mb-1">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 border-b border-border pb-6">
+          <div className="space-y-1">
+            <div className="section-eyebrow">
               // ON-CHAIN MONITOR
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold font-sans text-text-primary tracking-tight uppercase">
               Your Orders
             </h2>
-            <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+            <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
               Monitor and manage your conditional orders.
             </p>
           </div>
 
           <button
             onClick={onOpenCreateOrder}
-            className="btn-primary text-xs sm:text-sm font-semibold py-2 px-4"
+            className="btn-primary text-xs sm:text-sm font-semibold py-2 px-5 cursor-pointer"
           >
-            <Plus size={15} />
-            <span>Create Order</span>
+            <span>+ Create Order</span>
           </button>
         </div>
 
-        {/* 3 Top Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8">
+        {/* Top Stats - Minimalist Protocol Metrics Panels */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 py-10">
           {/* Total Orders */}
-          <div className="card-premium p-6">
-            <div className="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              TOTAL ORDERS
+          <div className="bg-surface-elevated/40 border border-border rounded-2xl p-6 flex flex-col justify-between min-h-[110px] hover:border-border-strong transition duration-200">
+            <div className="font-mono text-[9px] font-bold tracking-widest text-text-muted uppercase">
+              Total Orders
             </div>
-            <div className="mt-3 font-mono text-3xl font-extrabold text-white">
+            <div className="mt-3 font-mono text-3xl font-extrabold text-text-primary">
               {stats.totalOrders < 10 ? `0${stats.totalOrders}` : stats.totalOrders}
             </div>
-            <div className="mt-1 text-xs text-[var(--text-secondary)]">
-              Created on Starknet
+            <div className="mt-1.5 text-[9px] text-text-muted font-mono tracking-wider uppercase">
+              STRK/USDC • ETH/USDC
             </div>
           </div>
 
           {/* Active Orders */}
-          <div className="card-premium p-6">
-            <div className="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              ACTIVE ORDERS
+          <div className="bg-surface-elevated/40 border border-border rounded-2xl p-6 flex flex-col justify-between min-h-[110px] hover:border-accent/20 transition duration-200">
+            <div className="font-mono text-[9px] font-bold tracking-widest text-text-muted uppercase">
+              Active Orders
             </div>
-            <div className="mt-3 font-mono text-3xl font-extrabold text-[var(--accent-blue)]">
+            <div className="mt-3 font-mono text-3xl font-extrabold text-accent">
               {stats.activeOrders < 10 ? `0${stats.activeOrders}` : stats.activeOrders}
             </div>
-            <div className="mt-1 text-xs text-[var(--text-secondary)]">
+            <div className="mt-1.5 text-[9px] text-text-muted font-mono tracking-wider uppercase">
               Dormant in Escrow
             </div>
           </div>
 
           {/* Total Escrowed */}
-          <div className="card-premium p-6">
-            <div className="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              TOTAL ESCROWED
+          <div className="bg-surface-elevated/40 border border-border rounded-2xl p-6 flex flex-col justify-between min-h-[110px] hover:border-accent/20 transition duration-200">
+            <div className="font-mono text-[9px] font-bold tracking-widest text-text-muted uppercase">
+              Total Escrowed
             </div>
-            <div className="mt-3 font-mono text-3xl font-extrabold text-white">
-              {totalEscrowedFormatted} <span className="text-sm font-normal text-[var(--text-muted)]">STRK</span>
+            <div className="mt-3 font-mono text-3xl font-extrabold text-accent flex items-baseline gap-1.5">
+              <span>{totalEscrowedFormatted}</span>
+              <span className="text-xs font-normal text-text-muted">STRK</span>
             </div>
-            <div className="mt-1 text-xs text-[var(--text-secondary)]">
-              Locked Value
+            <div className="mt-1.5 text-[9px] text-text-muted font-mono tracking-wider uppercase">
+              Value Locked on-chain
             </div>
           </div>
         </div>

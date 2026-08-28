@@ -1,83 +1,75 @@
 import React from 'react';
 import { HeroVisual } from './HeroVisual';
-import { ArrowRight, Zap, Shield, EyeOff } from 'lucide-react';
+import { useRouter } from '../context/RouterContext';
 
 interface HeroProps {
   onOpenCreateOrder: () => void;
-  onScrollToSection: (sectionId: string) => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
   onOpenCreateOrder,
-  onScrollToSection,
 }) => {
+  const { navigate } = useRouter();
+
   return (
-    <section id="hero" className="relative pt-16 pb-20 overflow-hidden">
+    <section className="py-12 lg:py-0 bg-base overflow-hidden flex items-center min-h-[calc(100vh-80px)] w-full">
       <div className="container-custom">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-          {/* Left Column: Headline & Actions (7 cols on lg) */}
-          <div className="lg:col-span-7 space-y-6 text-left">
-            {/* Live Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(79,124,255,0.3)] bg-[#080D18] px-3.5 py-1 text-xs shadow-[0_0_15px_rgba(79,124,255,0.2)]">
-              <span className="h-2 w-2 rounded-full bg-[var(--accent-blue)] animate-pulse"></span>
-              <span className="font-mono text-xs font-semibold text-[var(--accent-blue)] uppercase tracking-wider">
-                LIVE ON STARKNET SEPOLIA
-              </span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-center">
+          {/* Left Column: Headline & Actions */}
+          <div className="lg:col-span-7 flex flex-col gap-6 text-left">
+            {/* Live Eyebrow */}
+            <div className="inline-flex self-start items-center gap-2 text-[10px] font-mono font-bold text-accent-blue uppercase tracking-widest bg-accent-blue/5 border border-accent-blue/15 px-3.5 py-1.5 rounded-full select-none">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent-green animate-pulse"></span>
+              <span>LIVE ON STARKNET SEPOLIA</span>
             </div>
 
-            {/* Main Heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-extrabold tracking-tight text-white leading-[1.1]">
-              Private Conditional Orders<br />
-              <span className="text-[#8B95A7] font-bold">
+            {/* Main Headings */}
+            <div className="flex flex-col gap-4">
+              <h1 
+                className="font-sans font-extrabold tracking-tight text-text-primary leading-[1.05] uppercase"
+                style={{ fontSize: 'clamp(2.2rem, 5vw, 4.8rem)' }}
+              >
+                Private<br />
+                Conditional<br />
+                Orders
+              </h1>
+              
+              <h2 
+                className="font-serif italic font-normal text-text-secondary leading-[1.2] pt-1"
+                style={{ fontSize: 'clamp(1.4rem, 2.8vw, 2.5rem)' }}
+              >
                 Executed When Conditions Are Met.
-              </span>
-            </h1>
+              </h2>
+            </div>
 
-            {/* Subtitle */}
-            <p className="max-w-xl text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
-              Create conditional on-chain orders that remain dormant until your price conditions are satisfied.
+            {/* Description */}
+            <p className="max-w-xl text-xs sm:text-sm text-text-secondary leading-relaxed font-sans">
+              Create conditional on-chain orders that remain dormant until your price conditions are satisfied. GhostOrder automates trade intent on Starknet without custodian key exposure.
             </p>
 
             {/* Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            <div className="flex flex-wrap items-center gap-4 pt-4">
               <button
-                onClick={onOpenCreateOrder}
-                className="btn-primary text-sm sm:text-base font-semibold"
+                onClick={() => navigate('dashboard')}
+                className="btn-primary text-xs font-semibold cursor-pointer h-12 rounded-xl px-6"
               >
-                <span>Create Order</span>
-                <ArrowRight size={16} />
+                <span>Open Dashboard →</span>
               </button>
 
               <button
-                onClick={() => onScrollToSection('contracts')}
-                className="btn-secondary text-sm sm:text-base font-semibold"
+                onClick={() => navigate('protocol')}
+                className="btn-secondary text-xs font-semibold cursor-pointer h-12 rounded-xl px-6"
               >
-                <span>View Contracts →</span>
+                <span>Verify Protocol →</span>
               </button>
-            </div>
-
-            {/* Feature Indicators */}
-            <div className="flex flex-wrap items-center gap-6 sm:gap-8 pt-4 text-xs text-[var(--text-secondary)] font-mono">
-              <div className="flex items-center gap-2">
-                <Zap size={14} className="text-[var(--accent-cyan)]" />
-                <span>Instant L2 Execution</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--accent-blue)] text-sm font-bold">◎</span>
-                <span>Private Until Triggered</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Shield size={14} className="text-emerald-400" />
-                <span>Smart Contract Escrow</span>
-              </div>
             </div>
           </div>
 
-          {/* Right Column: Hero Visual Trading Card (5 cols on lg) */}
-          <div className="lg:col-span-5 w-full">
-            <HeroVisual onOpenCreateOrder={onOpenCreateOrder} />
+          {/* Right Column: Hero Visual Product Preview */}
+          <div className="lg:col-span-5 w-full flex justify-center lg:justify-end relative">
+            {/* Ambient background glow */}
+            <div className="absolute -inset-10 bg-gradient-to-tr from-accent-blue/10 to-accent-blue/0 blur-[64px] pointer-events-none rounded-full"></div>
+            <HeroVisual onOpenCreateOrder={() => navigate('dashboard')} />
           </div>
         </div>
       </div>

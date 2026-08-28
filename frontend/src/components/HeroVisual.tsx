@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOrders } from '../context/OrderContext';
-import { ArrowRight, Zap, TrendingUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 interface HeroVisualProps {
   onOpenCreateOrder: () => void;
@@ -9,82 +9,82 @@ interface HeroVisualProps {
 export const HeroVisual: React.FC<HeroVisualProps> = ({ onOpenCreateOrder }) => {
   const { oraclePriceFormatted } = useOrders();
 
-  return (
-    <div className="relative w-full max-w-lg mx-auto">
-      {/* Background Soft Blue Glow */}
-      <div className="absolute -inset-4 bg-gradient-to-r from-[#4F7CFF]/20 via-[#00D2FF]/15 to-transparent blur-3xl -z-10 rounded-2xl pointer-events-none"></div>
+  const displayPrice = oraclePriceFormatted !== '0.00' ? `$${oraclePriceFormatted}` : '$2.50';
 
-      {/* Floating Trading Terminal Card */}
-      <div className="card-glass-terminal p-6 sm:p-7 space-y-5 relative">
+  return (
+    <div className="relative w-full max-w-[380px] select-none">
+      {/* Premium Product Preview Card */}
+      <div className="w-full bg-navy-card/80 backdrop-blur-md border border-border-strong rounded-2xl p-7 flex flex-col gap-6 shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-accent-blue/30">
+        
         {/* Card Header */}
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="h-2 w-2 rounded-full bg-[var(--accent-blue)]"></div>
-            <span className="font-mono text-xs font-bold text-white tracking-wider">
+        <div className="flex items-center justify-between border-b border-subtle pb-4">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-accent-blue animate-pulse"></div>
+            <span className="font-mono text-[9px] font-bold text-text-primary tracking-widest uppercase">
               GHOST ORDER #002
             </span>
           </div>
 
-          <span className="badge-status badge-ready">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-cyan)] animate-ping"></span>
-            ● READY
+          <span className="badge-status badge-ready text-[8px] tracking-widest py-1 px-2.5">
+            <span className="h-1 w-1 rounded-full bg-accent-green"></span>
+            READY
           </span>
         </div>
 
-        {/* Spec Rows */}
-        <div className="grid grid-cols-2 gap-4 font-mono">
+        {/* Spec Rows Grid */}
+        <div className="grid grid-cols-2 gap-y-5 gap-x-4 font-sans text-xs">
           <div>
-            <div className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-              PAIR
+            <div className="font-mono text-[9px] font-bold text-text-muted uppercase tracking-widest">
+              Pair
             </div>
-            <div className="text-base font-bold text-white mt-1 flex items-center gap-1.5">
+            <div className="text-xs font-extrabold text-text-primary mt-1.5 flex items-center gap-1">
               <span>STRK</span>
-              <span className="text-[var(--text-muted)] font-normal">→</span>
+              <span className="text-text-muted font-normal">→</span>
               <span>USDC</span>
             </div>
           </div>
 
           <div>
-            <div className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-              ESCROW
+            <div className="font-mono text-[9px] font-bold text-text-muted uppercase tracking-widest">
+              Escrow
             </div>
-            <div className="text-base font-bold text-white mt-1">
-              0.0100 <span className="text-xs font-normal text-[var(--text-muted)]">STRK</span>
+            <div className="text-xs font-extrabold text-text-primary mt-1.5">
+              0.0100 <span className="text-[9px] font-normal font-mono text-text-muted">STRK</span>
             </div>
           </div>
 
           <div>
-            <div className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-              TARGET PRICE
+            <div className="font-mono text-[9px] font-bold text-text-muted uppercase tracking-widest">
+              Target Price
             </div>
-            <div className="text-base font-bold text-white mt-1">
+            <div className="text-xs font-extrabold text-text-primary mt-1.5 font-mono">
               ≥ $2.00
             </div>
           </div>
 
           <div>
-            <div className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-              CURRENT ORACLE
+            <div className="font-mono text-[9px] font-bold text-text-muted uppercase tracking-widest">
+              Current Oracle
             </div>
-            <div className="text-base font-bold text-[var(--accent-cyan)] mt-1">
-              ${oraclePriceFormatted}
+            <div className="text-xs font-extrabold text-accent-blue mt-1.5 font-mono">
+              {displayPrice}
             </div>
           </div>
         </div>
 
         {/* Card Footer Button */}
-        <div className="pt-4 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] font-mono">
-            <TrendingUp size={13} className="text-emerald-400" />
-            <span>Target condition met</span>
+        <div className="pt-5 border-t border-subtle flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-accent-green font-mono uppercase tracking-wider text-[9px] font-semibold">
+            <span className="h-1 w-1 rounded-full bg-accent-green"></span>
+            <span>Target met</span>
           </div>
 
           <button
             onClick={onOpenCreateOrder}
-            className="btn-primary text-xs py-2 px-4 font-semibold"
+            className="btn-primary text-[9px] py-2 px-4 font-semibold cursor-pointer h-10 rounded-xl shadow-md border-0"
           >
-            <span>Create Order</span>
-            <ArrowRight size={13} />
+            <span>Execute Order</span>
+            <ArrowRight size={11} className="ml-1" />
           </button>
         </div>
       </div>

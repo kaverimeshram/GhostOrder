@@ -1,60 +1,98 @@
 import React from 'react';
 import { NETWORK_CONFIG, CONTRACT_ADDRESSES } from '../config/contracts';
-import { ExternalLink, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
+import { useRouter } from '../context/RouterContext';
 
-interface FooterProps {
-  onScrollToSection: (sectionId: string) => void;
-}
+export const Footer: React.FC = () => {
+  const { navigate } = useRouter();
 
-export const Footer: React.FC<FooterProps> = ({ onScrollToSection }) => {
   return (
-    <footer className="border-t border-[rgba(255,255,255,0.08)] bg-[#050505] py-12 text-xs text-[var(--text-secondary)]">
-      <div className="container-custom flex flex-col md:flex-row items-center justify-between gap-6 font-mono">
-        {/* Left: Brand info */}
-        <div className="space-y-1 text-center md:text-left">
-          <div className="flex items-center justify-center md:justify-start gap-2 text-white font-bold font-sans text-sm">
-            <Shield size={16} className="text-[var(--accent-blue)]" />
+    <footer className="border-t border-border-strong/45 bg-[#06080c] py-20 text-xs text-text-secondary w-full">
+      <div className="container-custom grid grid-cols-1 md:grid-cols-12 gap-12 font-sans">
+        
+        {/* Left Brand Column (Spans 5 columns) */}
+        <div className="md:col-span-5 space-y-4">
+          <div 
+            onClick={() => navigate('home')}
+            className="flex items-center gap-2 text-text-primary font-bold text-sm uppercase tracking-widest cursor-pointer group select-none"
+          >
+            <Shield size={18} className="text-accent group-hover:scale-105 transition duration-200" />
             <span>GhostOrder</span>
           </div>
-          <p className="text-[var(--text-muted)] text-[11px]">
-            Private conditional orders on Starknet.
+          <p className="text-text-secondary/70 leading-relaxed max-w-sm">
+            Automating conditional L2 orders trustlessly. Built on Starknet Sepolia.
           </p>
         </div>
 
-        {/* Center: Navigation Links */}
-        <div className="flex items-center gap-6">
-          <a
-            href="https://github.com/kaverimeshram/GhostOrder"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-white transition flex items-center gap-1"
-          >
-            <span>GitHub</span>
-            <ExternalLink size={10} />
-          </a>
+        {/* Right Links Columns (Spans 7 columns) */}
+        <div className="md:col-span-7 grid grid-cols-3 gap-8">
+          {/* Column 1: Application */}
+          <div className="space-y-4">
+            <h4 className="font-mono text-[9px] font-bold text-text-primary uppercase tracking-widest">// Product</h4>
+            <ul className="space-y-2.5">
+              <li>
+                <button onClick={() => navigate('home')} className="hover:text-text-primary transition duration-150 cursor-pointer">
+                  Home
+                </button>
+              </li>
+              <li>
+                <button onClick={() => navigate('dashboard')} className="hover:text-text-primary transition duration-150 cursor-pointer">
+                  Dashboard
+                </button>
+              </li>
+            </ul>
+          </div>
 
-          <a
-            href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${CONTRACT_ADDRESSES.ghostEscrow}`}
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-white transition flex items-center gap-1"
-          >
-            <span>Starkscan</span>
-            <ExternalLink size={10} />
-          </a>
+          {/* Column 2: Architecture */}
+          <div className="space-y-4">
+            <h4 className="font-mono text-[9px] font-bold text-text-primary uppercase tracking-widest">// Protocol</h4>
+            <ul className="space-y-2.5">
+              <li>
+                <button onClick={() => navigate('protocol')} className="hover:text-text-primary transition duration-150 cursor-pointer">
+                  Specifications
+                </button>
+              </li>
+              <li>
+                <button onClick={() => navigate('contracts')} className="hover:text-text-primary transition duration-150 cursor-pointer">
+                  Deployments
+                </button>
+              </li>
+            </ul>
+          </div>
 
-          <button
-            onClick={() => onScrollToSection('contracts')}
-            className="hover:text-white transition"
-          >
-            Contracts
-          </button>
+          {/* Column 3: Resources */}
+          <div className="space-y-4">
+            <h4 className="font-mono text-[9px] font-bold text-text-primary uppercase tracking-widest">// Starknet</h4>
+            <ul className="space-y-2.5">
+              <li>
+                <a
+                  href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${CONTRACT_ADDRESSES.ghostEscrow}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-text-primary transition flex items-center gap-1 cursor-pointer"
+                >
+                  Starkscan ↗
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/kaverimeshram/GhostOrder"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-text-primary transition flex items-center gap-1 cursor-pointer"
+                >
+                  GitHub ↗
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
-
-        {/* Right: Network info */}
-        <div className="text-[var(--text-muted)] text-center md:text-right">
-          <span>Built on Starknet Sepolia</span>
-        </div>
+      </div>
+      
+      {/* Bottom Legal row */}
+      <div className="container-custom mt-16 pt-8 border-t border-border-strong/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-text-muted font-mono text-[10px] tracking-widest uppercase">
+        <span>© 2026 GhostOrder Protocol</span>
+        <span>Built on Starknet L2</span>
       </div>
     </footer>
   );

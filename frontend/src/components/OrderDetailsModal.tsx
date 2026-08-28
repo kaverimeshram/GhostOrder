@@ -73,9 +73,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     <div className="modal-overlay">
       <div className="modal-content-card">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-6 py-4 bg-[#080D18]">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-surface">
           <div className="flex items-center gap-3">
-            <h3 className="font-mono text-base font-bold text-white">
+            <h3 className="font-mono text-base font-bold text-text-primary uppercase tracking-wider">
               Order #{orderNum}
             </h3>
 
@@ -98,80 +98,80 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-[var(--text-muted)] hover:text-white transition p-1"
+            className="text-text-muted hover:text-text-primary transition p-1 cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5 bg-[#050505] font-mono text-xs">
+        <div className="p-6 space-y-5 bg-surface-elevated font-mono text-xs">
           {/* Main Grid Info */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="card-premium p-3.5 space-y-1">
-              <div className="text-[10px] text-[var(--text-muted)] uppercase">OWNER</div>
-              <div className="text-xs font-bold text-white flex items-center justify-between">
+            <div className="card-premium p-3.5 space-y-1 border border-border-strong bg-bg-base shadow-none">
+              <div className="text-[10px] text-text-muted uppercase">OWNER</div>
+              <div className="text-xs font-bold text-text-primary flex items-center justify-between">
                 <span>{shorten(order.owner)}</span>
                 <button
                   onClick={() => handleCopy(order.owner, 'owner')}
-                  className="text-[var(--text-muted)] hover:text-white"
+                  className="text-text-muted hover:text-text-primary cursor-pointer"
                 >
-                  {copiedField === 'owner' ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                  {copiedField === 'owner' ? <Check size={11} className="text-success" /> : <Copy size={11} />}
                 </button>
               </div>
             </div>
 
-            <div className="card-premium p-3.5 space-y-1">
-              <div className="text-[10px] text-[var(--text-muted)] uppercase">ESCROW AMOUNT</div>
-              <div className="text-xs font-bold text-white">
+            <div className="card-premium p-3.5 space-y-1 border border-border-strong bg-bg-base shadow-none">
+              <div className="text-[10px] text-text-muted uppercase">ESCROW AMOUNT</div>
+              <div className="text-xs font-bold text-text-primary">
                 {formattedAmountIn} {tokenInInfo.symbol}
               </div>
             </div>
 
-            <div className="card-premium p-3.5 space-y-1">
-              <div className="text-[10px] text-[var(--text-muted)] uppercase">OUTPUT TOKEN</div>
-              <div className="text-xs font-bold text-white">
+            <div className="card-premium p-3.5 space-y-1 border border-border-strong bg-bg-base shadow-none">
+              <div className="text-[10px] text-text-muted uppercase">OUTPUT TOKEN</div>
+              <div className="text-xs font-bold text-text-primary">
                 {tokenOutInfo.symbol} (Min: {formattedMinOut})
               </div>
             </div>
 
-            <div className="card-premium p-3.5 space-y-1">
-              <div className="text-[10px] text-[var(--text-muted)] uppercase">TARGET PRICE</div>
-              <div className="text-xs font-bold text-white">
+            <div className="card-premium p-3.5 space-y-1 border border-border-strong bg-bg-base shadow-none">
+              <div className="text-[10px] text-text-muted uppercase">TARGET PRICE</div>
+              <div className="text-xs font-bold text-text-primary">
                 ≥ ${formattedTargetPrice}
               </div>
             </div>
 
-            <div className="card-premium p-3.5 space-y-1 col-span-2">
-              <div className="text-[10px] text-[var(--text-muted)] uppercase">CURRENT ORACLE PRICE</div>
-              <div className="text-sm font-bold text-[var(--accent-cyan)]">
+            <div className="card-premium p-3.5 space-y-1 col-span-2 border border-border-strong bg-bg-base shadow-none">
+              <div className="text-[10px] text-text-muted uppercase">CURRENT ORACLE PRICE</div>
+              <div className="text-sm font-bold text-accent">
                 ${oraclePriceFormatted} USDC
               </div>
             </div>
           </div>
 
           {/* Contract Address Box */}
-          <div className="card-premium p-4 space-y-2.5">
+          <div className="card-premium p-4 space-y-2.5 border border-border-strong bg-bg-base shadow-none">
             <div className="flex items-center justify-between">
-              <span className="text-[var(--text-muted)]">Contract Address:</span>
-              <div className="flex items-center gap-2 text-white">
+              <span className="text-text-muted font-sans text-xs">Contract Address:</span>
+              <div className="flex items-center gap-2 text-text-primary">
                 <span>{shorten(CONTRACT_ADDRESSES.ghostEscrow)}</span>
                 <button
                   onClick={() => handleCopy(CONTRACT_ADDRESSES.ghostEscrow, 'contract')}
-                  className="text-[var(--text-muted)] hover:text-white"
+                  className="text-text-muted hover:text-text-primary cursor-pointer"
                 >
-                  {copiedField === 'contract' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                  {copiedField === 'contract' ? <Check size={12} className="text-success" /> : <Copy size={12} />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between border-t border-[rgba(255,255,255,0.04)] pt-2">
-              <span className="text-[var(--text-muted)]">Starkscan Explorer:</span>
+            <div className="flex items-center justify-between border-t border-border pt-2">
+              <span className="text-text-muted font-sans text-xs">Starkscan Explorer:</span>
               <a
                 href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${CONTRACT_ADDRESSES.ghostEscrow}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1 text-[var(--accent-blue)] hover:underline"
+                className="flex items-center gap-1 text-accent hover:underline font-sans text-xs"
               >
                 <span>View on Starkscan</span>
                 <ExternalLink size={12} />
@@ -186,7 +186,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 <button
                   onClick={handleExecute}
                   disabled={!isConnected || actionLoading === 'exec'}
-                  className="btn-primary flex-1 text-xs py-2.5 font-semibold"
+                  className="btn-primary flex-1 text-xs py-2.5 font-semibold cursor-pointer"
                 >
                   <Play size={13} fill="currentColor" />
                   <span>{actionLoading === 'exec' ? 'Executing...' : 'Execute Order'}</span>
@@ -196,7 +196,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <button
                 onClick={handleCancel}
                 disabled={!isConnected || actionLoading === 'cancel'}
-                className="btn-action-cancel flex-1 text-xs py-2.5 font-semibold justify-center"
+                className="btn-action-cancel flex-1 text-xs py-2.5 font-semibold justify-center cursor-pointer"
               >
                 <XCircle size={14} />
                 <span>{actionLoading === 'cancel' ? 'Cancelling...' : 'Cancel Order'}</span>
