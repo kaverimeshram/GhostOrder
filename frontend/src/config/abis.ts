@@ -1,8 +1,10 @@
 import ESCROW_ABI from './escrow_abi.json';
+import ESCROW_V2_ABI from './escrow_v2_abi.json';
 import ORACLE_ABI from './oracle_abi.json';
 import SETTLEMENT_ABI from './settlement_abi.json';
 
 export const GHOST_ESCROW_ABI = ESCROW_ABI;
+export const GHOST_ESCROW_V2_ABI = ESCROW_V2_ABI;
 export const MOCK_ORACLE_ABI = ORACLE_ABI;
 export const MOCK_SETTLEMENT_ABI = SETTLEMENT_ABI;
 

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { CallData, Contract, cairo, uint256 } from 'starknet';
+import { CallData, Contract, CairoCustomEnum, cairo, uint256 } from 'starknet';
 import { OnChainOrder, OrderStatus, ProtocolStats } from '../types/contracts';
 import { CONTRACT_ADDRESSES, SUPPORTED_TOKENS } from '../config/contracts';
-import { GHOST_ESCROW_ABI, MOCK_ORACLE_ABI, ERC20_ABI } from '../config/abis';
+import { GHOST_ESCROW_V2_ABI, MOCK_ORACLE_ABI, ERC20_ABI } from '../config/abis';
 import { useWallet } from './WalletContext';
 
 export interface TxStatusState {
@@ -26,7 +26,9 @@ interface OrderContextType {
     amountIn: string,
     targetPrice: string,
     minAmountOut: string,
-    expiryHours: number
+    expiryHours: number,
+    timeConditionEnabled?: boolean,
+    timeConditionTimestamp?: number
   ) => Promise<string>;
   executeOrder: (orderId: bigint) => Promise<string>;
   cancelOrder: (orderId: bigint) => Promise<string>;
@@ -94,8 +96,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchOnChainData = useCallback(async () => {
     try {
       const escrowContract = new Contract({
-        abi: GHOST_ESCROW_ABI,
-        address: CONTRACT_ADDRESSES.ghostEscrow,
+        abi: GHOST_ESCROW_V2_ABI,
+        address: CONTRACT_ADDRESSES.ghostEscrowV2,
         providerOrAccount: provider,
       });
 
@@ -156,18 +158,34 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
           };
 
+          const actionData = data.action || {};
           const formattedOwner = formatAddress(data.owner);
-          const formattedTokenIn = formatAddress(data.token_in);
-          const formattedTokenOut = formatAddress(data.token_out);
+          const formattedTokenIn = formatAddress(actionData.token_in);
+          const formattedTokenOut = formatAddress(actionData.token_out);
+
+          // Let's fetch targetPrice from the Price condition (if exists)
+          let targetPrice = 0n;
+          const conditionsCount = Number(data.conditions_count || 0);
+          for (let j = 0; j < conditionsCount; j++) {
+            try {
+              const cond = await escrowContract.get_condition(i, j);
+              const condType = cond.cond_type?.activeVariant?.() || cond.cond_type?.name || Number(cond.cond_type);
+              if (condType === 0 || condType === 'Price') {
+                targetPrice = toBigIntSafe(cond.value);
+              }
+            } catch (err) {
+              console.warn(`Failed to fetch condition #${j} for order #${i}:`, err);
+            }
+          }
 
           fetchedOrders.push({
             id: BigInt(i),
             owner: formattedOwner,
             tokenIn: formattedTokenIn,
             tokenOut: formattedTokenOut,
-            amountIn: toBigIntSafe(data.amount_in),
-            targetPrice: toBigIntSafe(data.target_price),
-            minAmountOut: toBigIntSafe(data.min_amount_out),
+            amountIn: toBigIntSafe(actionData.amount_in),
+            targetPrice: targetPrice,
+            minAmountOut: toBigIntSafe(actionData.min_amount_out),
             expiry: toBigIntSafe(data.expiry),
             status: statusEnum,
             isExecutable: isExec,
@@ -212,7 +230,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     amountIn: string,
     targetPrice: string,
     minAmountOut: string,
-    expiryHours: number
+    expiryHours: number,
+    timeConditionEnabled?: boolean,
+    timeConditionTimestamp?: number
   ): Promise<string> => {
     if (!account) {
       throw new Error('Please connect your Starknet wallet first.');
@@ -233,22 +253,47 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       const escrowContract = new Contract({
-        abi: GHOST_ESCROW_ABI,
-        address: CONTRACT_ADDRESSES.ghostEscrow,
+        abi: GHOST_ESCROW_V2_ABI,
+        address: CONTRACT_ADDRESSES.ghostEscrowV2,
         providerOrAccount: account,
       });
 
       const approveCall = strkContract.populate('approve', {
-        spender: CONTRACT_ADDRESSES.ghostEscrow,
+        spender: CONTRACT_ADDRESSES.ghostEscrowV2,
         amount: cairo.uint256(amountInBN),
       });
 
-      const createCall = escrowContract.populate('create_order', {
+      const priceCondition = {
+        cond_type: new CairoCustomEnum({ Price: {} }),
+        operator: new CairoCustomEnum({ Gte: {} }),
+        value: cairo.uint256(targetPriceBN),
+        token_in: tokenIn,
+        token_out: tokenOut
+      };
+
+      const conditions = [priceCondition];
+
+      if (timeConditionEnabled && timeConditionTimestamp) {
+        conditions.push({
+          cond_type: new CairoCustomEnum({ Time: {} }),
+          operator: new CairoCustomEnum({ Gte: {} }),
+          value: cairo.uint256(BigInt(timeConditionTimestamp)),
+          token_in: '0x0000000000000000000000000000000000000000000000000000000000000000',
+          token_out: '0x0000000000000000000000000000000000000000000000000000000000000000'
+        });
+      }
+
+      const action = {
+        action_type: new CairoCustomEnum({ Swap: {} }),
         token_in: tokenIn,
         token_out: tokenOut,
         amount_in: cairo.uint256(amountInBN),
-        target_price: cairo.uint256(targetPriceBN),
-        min_amount_out: cairo.uint256(minAmountOutBN),
+        min_amount_out: cairo.uint256(minAmountOutBN)
+      };
+
+      const createCall = escrowContract.populate('create_order', {
+        conditions,
+        action,
         expiry: expiryBN,
       });
 
@@ -292,8 +337,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTxStatus({ stage: 'submitting', message: `Executing Order #${orderId}...` });
 
       const escrowContract = new Contract({
-        abi: GHOST_ESCROW_ABI,
-        address: CONTRACT_ADDRESSES.ghostEscrow,
+        abi: GHOST_ESCROW_V2_ABI,
+        address: CONTRACT_ADDRESSES.ghostEscrowV2,
         providerOrAccount: account,
       });
 
@@ -337,8 +382,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTxStatus({ stage: 'submitting', message: `Cancelling Order #${orderId}...` });
 
       const escrowContract = new Contract({
-        abi: GHOST_ESCROW_ABI,
-        address: CONTRACT_ADDRESSES.ghostEscrow,
+        abi: GHOST_ESCROW_V2_ABI,
+        address: CONTRACT_ADDRESSES.ghostEscrowV2,
         providerOrAccount: account,
       });
 

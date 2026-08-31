@@ -781,4 +781,388 @@ mod tests {
         set_contract_address(USER1());
         escrow.create_order(token_in_addr, token_out_addr, 100_u256, 100, 90, 1000);
     }
+
+    // V2 Implementation Tests
+    use core::num::traits::Zero;
+    use ghost_orders::ghost_escrow_v2::GhostEscrowV2;
+    use ghost_orders::types::{
+        IGhostEscrowV2Dispatcher, IGhostEscrowV2DispatcherTrait,
+        Condition, ConditionType, Operator, Action, ActionType
+    };
+
+    fn deploy_escrow_v2(oracle_addr: ContractAddress, settlement_addr: ContractAddress) -> ContractAddress {
+        let mut calldata: Array<felt252> = ArrayTrait::new();
+        oracle_addr.serialize(ref calldata);
+        settlement_addr.serialize(ref calldata);
+        let (addr, _) = deploy_syscall(
+            GhostEscrowV2::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false,
+        )
+            .unwrap();
+        addr
+    }
+
+    fn setup_v2() -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress, ContractAddress) {
+        set_contract_address(ADMIN());
+        set_caller_address(ADMIN());
+        set_block_timestamp(1000);
+        let oracle_addr = deploy_oracle();
+        let settlement_addr = deploy_settlement();
+        let escrow_addr = deploy_escrow_v2(oracle_addr, settlement_addr);
+        let token_in_addr = deploy_mock_token("Token In", "TKNI", 18);
+        let token_out_addr = deploy_mock_token("Token Out", "TKNO", 18);
+        (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr)
+    }
+
+    #[test]
+    fn test_v2_price_condition_only() {
+        let (escrow_addr, oracle_addr, _, token_in_addr, token_out_addr) = setup_v2();
+        let escrow = IGhostEscrowV2Dispatcher { contract_address: escrow_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+
+        // Mint token_in to USER1
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 1500_u256);
+
+        // Define single condition: price >= 2000
+        let mut conditions = ArrayTrait::new();
+        conditions.append(Condition {
+            cond_type: ConditionType::Price,
+            operator: Operator::Gte,
+            value: 2000_u256,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+        });
+
+        let action = Action {
+            action_type: ActionType::Swap,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+            amount_in: 1000_u256,
+            min_amount_out: 950_u256,
+        };
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(conditions, action, 5000);
+
+        // Price is 1500 -> not executable
+        assert(!escrow.is_order_executable(order_id), 'Should not be executable');
+
+        // Set price to 2500 -> executable
+        set_contract_address(ADMIN());
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+        assert(escrow.is_order_executable(order_id), 'Should be executable');
+    }
+
+    #[test]
+    fn test_v2_time_condition_only() {
+        let (escrow_addr, _, _, token_in_addr, token_out_addr) = setup_v2();
+        let escrow = IGhostEscrowV2Dispatcher { contract_address: escrow_addr };
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+
+        // Mint token_in to USER1
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+
+        // Define single condition: time >= 1200
+        let mut conditions = ArrayTrait::new();
+        conditions.append(Condition {
+            cond_type: ConditionType::Time,
+            operator: Operator::Gte,
+            value: 1200_u256,
+            token_in: Zero::zero(),
+            token_out: Zero::zero(),
+        });
+
+        let action = Action {
+            action_type: ActionType::Swap,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+            amount_in: 1000_u256,
+            min_amount_out: 950_u256,
+        };
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(conditions, action, 5000);
+
+        // Current time is 1000 -> not executable
+        assert(!escrow.is_order_executable(order_id), 'Should not be executable yet');
+
+        // Update block time to 1250 -> executable
+        set_block_timestamp(1250);
+        assert(escrow.is_order_executable(order_id), 'Should be executable now');
+    }
+
+    #[test]
+    fn test_v2_two_conditions_and() {
+        let (escrow_addr, oracle_addr, _, token_in_addr, token_out_addr) = setup_v2();
+        let escrow = IGhostEscrowV2Dispatcher { contract_address: escrow_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 1500_u256); // Below price threshold
+
+        // Conditions: price >= 2000 AND time >= 1200
+        let mut conditions = ArrayTrait::new();
+        conditions.append(Condition {
+            cond_type: ConditionType::Price,
+            operator: Operator::Gte,
+            value: 2000_u256,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+        });
+        conditions.append(Condition {
+            cond_type: ConditionType::Time,
+            operator: Operator::Gte,
+            value: 1200_u256,
+            token_in: Zero::zero(),
+            token_out: Zero::zero(),
+        });
+
+        let action = Action {
+            action_type: ActionType::Swap,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+            amount_in: 1000_u256,
+            min_amount_out: 950_u256,
+        };
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(conditions, action, 5000);
+
+        // Case 1: time=1000, price=1500 -> False
+        assert(!escrow.is_order_executable(order_id), 'Should be False (both fail)');
+
+        // Case 2: time=1250, price=1500 -> False
+        set_block_timestamp(1250);
+        assert(!escrow.is_order_executable(order_id), 'Should be False (price fails)');
+
+        // Case 3: time=1000, price=2500 -> False
+        set_block_timestamp(1000);
+        set_contract_address(ADMIN());
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+        assert(!escrow.is_order_executable(order_id), 'Should be False (time fails)');
+
+        // Case 4: time=1250, price=2500 -> True
+        set_block_timestamp(1250);
+        assert(escrow.is_order_executable(order_id), 'Should be True (both pass)');
+    }
+
+    #[test]
+    fn test_v2_execute_order() {
+        let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup_v2();
+        let escrow = IGhostEscrowV2Dispatcher { contract_address: escrow_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+        let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        token_out.mint(settlement_addr, 10000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+        set_block_timestamp(1500);
+
+        let mut conditions = ArrayTrait::new();
+        conditions.append(Condition {
+            cond_type: ConditionType::Price,
+            operator: Operator::Gte,
+            value: 2000_u256,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+        });
+
+        let action = Action {
+            action_type: ActionType::Swap,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+            amount_in: 1000_u256,
+            min_amount_out: 950_u256,
+        };
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(conditions, action, 5000);
+
+        // Execute as Keeper
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+
+        // Verifications
+        assert(token_in.balance_of(escrow_addr) == 0_u256, 'Escrow token_in balance not 0');
+        assert(token_in.balance_of(settlement_addr) == 1000_u256, 'Settlement did not receive in');
+        assert(token_out.balance_of(USER1()) == 950_u256, 'USER1 did not receive out');
+
+        let order = escrow.get_order(order_id);
+        assert(order.status == OrderStatus::Executed, 'Status not Executed');
+    }
+
+    #[test]
+    fn test_v2_cancel_order() {
+        let (escrow_addr, _, _, token_in_addr, token_out_addr) = setup_v2();
+        let escrow = IGhostEscrowV2Dispatcher { contract_address: escrow_addr };
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+
+        let mut conditions = ArrayTrait::new();
+        conditions.append(Condition {
+            cond_type: ConditionType::Time,
+            operator: Operator::Gte,
+            value: 1200_u256,
+            token_in: Zero::zero(),
+            token_out: Zero::zero(),
+        });
+
+        let action = Action {
+            action_type: ActionType::Swap,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+            amount_in: 1000_u256,
+            min_amount_out: 950_u256,
+        };
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(conditions, action, 5000);
+
+        // Cancel
+        escrow.cancel_order(order_id);
+
+        // Verification
+        assert(token_in.balance_of(USER1()) == 5000_u256, 'Refund failed');
+        assert(token_in.balance_of(escrow_addr) == 0_u256, 'Escrow not empty');
+
+        let order = escrow.get_order(order_id);
+        assert(order.status == OrderStatus::Cancelled, 'Status not Cancelled');
+    }
+
+    #[test]
+    #[should_panic(expected: ('Conditions not met', 'ENTRYPOINT_FAILED'))]
+    fn test_v2_execute_fails_conditions_false() {
+        let (escrow_addr, oracle_addr, _, token_in_addr, token_out_addr) = setup_v2();
+        let escrow = IGhostEscrowV2Dispatcher { contract_address: escrow_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 1500_u256);
+
+        let mut conditions = ArrayTrait::new();
+        conditions.append(Condition {
+            cond_type: ConditionType::Price,
+            operator: Operator::Gte,
+            value: 2000_u256,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+        });
+
+        let action = Action {
+            action_type: ActionType::Swap,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+            amount_in: 1000_u256,
+            min_amount_out: 950_u256,
+        };
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(conditions, action, 5000);
+
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+    }
+
+    #[test]
+    #[should_panic(expected: ('Order is not active', 'ENTRYPOINT_FAILED'))]
+    fn test_v2_cannot_double_execute() {
+        let (escrow_addr, oracle_addr, settlement_addr, token_in_addr, token_out_addr) = setup_v2();
+        let escrow = IGhostEscrowV2Dispatcher { contract_address: escrow_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+        let token_out = IMockERC20Dispatcher { contract_address: token_out_addr };
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        token_out.mint(settlement_addr, 10000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+
+        let mut conditions = ArrayTrait::new();
+        conditions.append(Condition {
+            cond_type: ConditionType::Price,
+            operator: Operator::Gte,
+            value: 2000_u256,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+        });
+
+        let action = Action {
+            action_type: ActionType::Swap,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+            amount_in: 1000_u256,
+            min_amount_out: 950_u256,
+        };
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        let order_id = escrow.create_order(conditions, action, 5000);
+
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+        escrow.execute_order(order_id); // Fails
+    }
+
+    #[test]
+    #[should_panic(expected: ('Order has expired', 'ENTRYPOINT_FAILED'))]
+    fn test_v2_execute_expired_order() {
+        let (escrow_addr, oracle_addr, _, token_in_addr, token_out_addr) = setup_v2();
+        let escrow = IGhostEscrowV2Dispatcher { contract_address: escrow_addr };
+        let oracle = IPriceOracleDispatcher { contract_address: oracle_addr };
+        let token_in = IMockERC20Dispatcher { contract_address: token_in_addr };
+
+        set_contract_address(ADMIN());
+        token_in.mint(USER1(), 5000_u256);
+        oracle.set_price(token_in_addr, token_out_addr, 2500_u256);
+        set_block_timestamp(1500);
+
+        let mut conditions = ArrayTrait::new();
+        conditions.append(Condition {
+            cond_type: ConditionType::Price,
+            operator: Operator::Gte,
+            value: 2000_u256,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+        });
+
+        let action = Action {
+            action_type: ActionType::Swap,
+            token_in: token_in_addr,
+            token_out: token_out_addr,
+            amount_in: 1000_u256,
+            min_amount_out: 950_u256,
+        };
+
+        set_contract_address(USER1());
+        token_in.approve(escrow_addr, 1000_u256);
+        // Expiry is at block time 2000 (which is in the future relative to 1500)
+        let order_id = escrow.create_order(conditions, action, 2000);
+
+        // Advance past expiry to 2500
+        set_block_timestamp(2500);
+
+        set_caller_address(KEEPER());
+        set_contract_address(KEEPER());
+        escrow.execute_order(order_id);
+    }
 }

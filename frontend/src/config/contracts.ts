@@ -4,6 +4,9 @@ export const CONTRACT_ADDRESSES = {
   ghostEscrow:
     process.env.GHOST_ESCROW_ADDRESS ||
     '0x05ac12e8a803d62ce65883a6352d1a38e7718b513721da2a5a0aeb2b79c6d53f',
+  ghostEscrowV2:
+    process.env.GHOST_ESCROW_V2_ADDRESS ||
+    '0x6a6cc27975f4020f8151ae8d6c9f8e233b879d167768f53e48a2a6be4610aa7',
   oracle:
     process.env.ORACLE_ADDRESS ||
     '0x063cc916c44b0ca8e6394adbead8a30aa3c1c3de6355f1d060e2962eed5883f2',

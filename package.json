@@ -10,6 +10,7 @@
     "test:privacy": "ts-node strk20/test-privacy-flow.ts",
     "test:onchain": "ts-node scripts/test-onchain.ts",
     "test:execution": "ts-node scripts/test-execution.ts",
+    "test:v2-onchain": "ts-node scripts/test-v2-onchain.ts",
     "activate": "ts-node strk20/activate-account.ts",
     "deploy": "ts-node strk20/deploy.ts",
     "deploy:foundry": "ts-node strk20/deploy-foundry.ts",

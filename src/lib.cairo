@@ -1,4 +1,5 @@
 pub mod ghost_escrow;
+pub mod ghost_escrow_v2;
 pub mod mock_erc20;
 pub mod mock_price_oracle;
 pub mod mock_settlement;

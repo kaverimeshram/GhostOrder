@@ -112,3 +112,81 @@ pub trait IGhostEscrow<TContractState> {
 
     fn get_settlement(self: @TContractState) -> ContractAddress;
 }
+
+#[derive(Drop, Copy, Serde, starknet::Store, PartialEq, Debug)]
+pub enum ConditionType {
+    #[default]
+    Price,
+    Time,
+}
+
+#[derive(Drop, Copy, Serde, starknet::Store, PartialEq, Debug)]
+pub enum Operator {
+    #[default]
+    Lt,
+    Lte,
+    Gt,
+    Gte,
+    Eq,
+}
+
+#[derive(Drop, Copy, Serde, starknet::Store, PartialEq, Debug)]
+pub struct Condition {
+    pub cond_type: ConditionType,
+    pub operator: Operator,
+    pub value: u256,
+    pub token_in: ContractAddress,
+    pub token_out: ContractAddress,
+}
+
+#[derive(Drop, Copy, Serde, starknet::Store, PartialEq, Debug)]
+pub enum ActionType {
+    #[default]
+    Swap,
+}
+
+#[derive(Drop, Copy, Serde, starknet::Store, PartialEq, Debug)]
+pub struct Action {
+    pub action_type: ActionType,
+    pub token_in: ContractAddress,
+    pub token_out: ContractAddress,
+    pub amount_in: u256,
+    pub min_amount_out: u256,
+}
+
+#[derive(Drop, Copy, Serde, starknet::Store, Debug, PartialEq)]
+pub struct OrderV2 {
+    pub order_id: u64,
+    pub owner: ContractAddress,
+    pub action: Action,
+    pub expiry: u64,
+    pub status: OrderStatus,
+    pub conditions_count: u32,
+}
+
+#[starknet::interface]
+pub trait IGhostEscrowV2<TContractState> {
+    fn create_order(
+        ref self: TContractState,
+        conditions: Array<Condition>,
+        action: Action,
+        expiry: u64,
+    ) -> u64;
+
+    fn cancel_order(ref self: TContractState, order_id: u64);
+
+    fn execute_order(ref self: TContractState, order_id: u64);
+
+    fn get_order(self: @TContractState, order_id: u64) -> OrderV2;
+
+    fn get_condition(self: @TContractState, order_id: u64, condition_idx: u32) -> Condition;
+
+    fn get_order_count(self: @TContractState) -> u64;
+
+    fn is_order_executable(self: @TContractState, order_id: u64) -> bool;
+
+    fn get_oracle(self: @TContractState) -> ContractAddress;
+
+    fn get_settlement(self: @TContractState) -> ContractAddress;
+}
+

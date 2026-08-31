@@ -1,0 +1,430 @@
+[
+  {
+    "type": "impl",
+    "name": "GhostEscrowV2Impl",
+    "interface_name": "ghost_orders::types::IGhostEscrowV2"
+  },
+  {
+    "type": "enum",
+    "name": "ghost_orders::types::ConditionType",
+    "variants": [
+      {
+        "name": "Price",
+        "type": "()"
+      },
+      {
+        "name": "Time",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "ghost_orders::types::Operator",
+    "variants": [
+      {
+        "name": "Lt",
+        "type": "()"
+      },
+      {
+        "name": "Lte",
+        "type": "()"
+      },
+      {
+        "name": "Gt",
+        "type": "()"
+      },
+      {
+        "name": "Gte",
+        "type": "()"
+      },
+      {
+        "name": "Eq",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "ghost_orders::types::Condition",
+    "members": [
+      {
+        "name": "cond_type",
+        "type": "ghost_orders::types::ConditionType"
+      },
+      {
+        "name": "operator",
+        "type": "ghost_orders::types::Operator"
+      },
+      {
+        "name": "value",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "token_in",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token_out",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "ghost_orders::types::ActionType",
+    "variants": [
+      {
+        "name": "Swap",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "ghost_orders::types::Action",
+    "members": [
+      {
+        "name": "action_type",
+        "type": "ghost_orders::types::ActionType"
+      },
+      {
+        "name": "token_in",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token_out",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "amount_in",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "min_amount_out",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "ghost_orders::types::OrderStatus",
+    "variants": [
+      {
+        "name": "None",
+        "type": "()"
+      },
+      {
+        "name": "Active",
+        "type": "()"
+      },
+      {
+        "name": "Executed",
+        "type": "()"
+      },
+      {
+        "name": "Cancelled",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "ghost_orders::types::OrderV2",
+    "members": [
+      {
+        "name": "order_id",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "action",
+        "type": "ghost_orders::types::Action"
+      },
+      {
+        "name": "expiry",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "status",
+        "type": "ghost_orders::types::OrderStatus"
+      },
+      {
+        "name": "conditions_count",
+        "type": "core::integer::u32"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "core::bool",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "ghost_orders::types::IGhostEscrowV2",
+    "items": [
+      {
+        "type": "function",
+        "name": "create_order",
+        "inputs": [
+          {
+            "name": "conditions",
+            "type": "core::array::Array::<ghost_orders::types::Condition>"
+          },
+          {
+            "name": "action",
+            "type": "ghost_orders::types::Action"
+          },
+          {
+            "name": "expiry",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u64"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "cancel_order",
+        "inputs": [
+          {
+            "name": "order_id",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "execute_order",
+        "inputs": [
+          {
+            "name": "order_id",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_order",
+        "inputs": [
+          {
+            "name": "order_id",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "ghost_orders::types::OrderV2"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_condition",
+        "inputs": [
+          {
+            "name": "order_id",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "condition_idx",
+            "type": "core::integer::u32"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "ghost_orders::types::Condition"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_order_count",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u64"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "is_order_executable",
+        "inputs": [
+          {
+            "name": "order_id",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_oracle",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_settlement",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "constructor",
+    "name": "constructor",
+    "inputs": [
+      {
+        "name": "oracle",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "settlement",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ghost_orders::ghost_escrow_v2::GhostEscrowV2::OrderCreated",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_id",
+        "type": "core::integer::u64",
+        "kind": "key"
+      },
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "action",
+        "type": "ghost_orders::types::Action",
+        "kind": "data"
+      },
+      {
+        "name": "expiry",
+        "type": "core::integer::u64",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ghost_orders::ghost_escrow_v2::GhostEscrowV2::OrderCancelled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_id",
+        "type": "core::integer::u64",
+        "kind": "key"
+      },
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ghost_orders::ghost_escrow_v2::GhostEscrowV2::OrderExecuted",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_id",
+        "type": "core::integer::u64",
+        "kind": "key"
+      },
+      {
+        "name": "keeper",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "amount_out",
+        "type": "core::integer::u256",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ghost_orders::ghost_escrow_v2::GhostEscrowV2::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "OrderCreated",
+        "type": "ghost_orders::ghost_escrow_v2::GhostEscrowV2::OrderCreated",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderCancelled",
+        "type": "ghost_orders::ghost_escrow_v2::GhostEscrowV2::OrderCancelled",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderExecuted",
+        "type": "ghost_orders::ghost_escrow_v2::GhostEscrowV2::OrderExecuted",
+        "kind": "nested"
+      }
+    ]
+  }
+]

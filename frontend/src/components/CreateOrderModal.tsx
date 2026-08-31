@@ -22,6 +22,8 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
   const [targetPrice, setTargetPrice] = useState<string>('2.00');
   const [minAmountOut, setMinAmountOut] = useState<string>('0.02');
   const [expiryHours, setExpiryHours] = useState<number>(24);
+  const [timeConditionEnabled, setTimeConditionEnabled] = useState<boolean>(false);
+  const [timeConditionHours, setTimeConditionHours] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -57,7 +59,9 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
         amountIn,
         targetPrice,
         minAmountOut || (numAmountIn * numTargetPrice * 0.95).toFixed(4),
-        expiryHours
+        expiryHours,
+        timeConditionEnabled,
+        timeConditionEnabled ? Math.floor(Date.now() / 1000) + timeConditionHours * 3600 : undefined
       );
     } catch (err: any) {
       setLocalError(err.message || 'Transaction submission failed.');
@@ -194,39 +198,103 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
               </div>
             </div>
 
-            {/* TARGET PRICE */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs text-text-muted">
-                <span className="uppercase font-semibold">TARGET PRICE</span>
-                <span>Oracle: ${oraclePriceFormatted}</span>
+            {/* CONDITIONAL ENGINE - WHEN / AND / THEN */}
+            <div className="space-y-4 border-t border-border pt-4">
+              <div className="text-[11px] font-mono font-bold text-accent uppercase tracking-wider">
+                Programmable Conditions
               </div>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-lg border border-border-strong bg-bg-base px-3.5 py-2.5 text-sm font-bold text-text-secondary">
-                  ≥
+
+              {/* WHEN PRICE CONDITION */}
+              <div className="space-y-1.5 p-3 rounded-lg bg-bg-base/40 border border-border/80">
+                <div className="flex justify-between text-xs text-text-muted">
+                  <span className="font-bold text-text-primary">WHEN PRICE</span>
+                  <span>Oracle: ${oraclePriceFormatted}</span>
                 </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={targetPrice}
-                  onChange={(e) => setTargetPrice(e.target.value)}
-                  placeholder="2.00"
-                  className="input-premium flex-1 text-sm font-bold"
-                  disabled={isSubmitting}
-                  required
-                />
+                <div className="flex gap-2 items-center">
+                  <select
+                    disabled
+                    className="rounded-lg border border-border-strong bg-bg-base px-3 py-2 text-xs font-bold text-text-secondary outline-none"
+                  >
+                    <option>STRK Price</option>
+                  </select>
+                  <div className="rounded-lg border border-border-strong bg-bg-base px-3 py-2 text-xs font-bold text-text-secondary">
+                    ≥
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={targetPrice}
+                    onChange={(e) => setTargetPrice(e.target.value)}
+                    placeholder="2.00"
+                    className="input-premium flex-1 text-sm font-bold"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* AND TIME CONDITION */}
+              <div className="space-y-2 p-3 rounded-lg bg-bg-base/40 border border-border/80">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-text-muted select-none">
+                    <input
+                      type="checkbox"
+                      checked={timeConditionEnabled}
+                      onChange={(e) => setTimeConditionEnabled(e.target.checked)}
+                      disabled={isSubmitting}
+                      className="rounded border-border bg-bg-base text-accent focus:ring-accent cursor-pointer"
+                    />
+                    <span className={timeConditionEnabled ? "text-text-primary" : "text-text-muted"}>
+                      AND TIME CONDITION
+                    </span>
+                  </label>
+                </div>
+
+                {timeConditionEnabled && (
+                  <div className="flex gap-2 items-center pt-1">
+                    <div className="text-xs font-bold text-text-secondary pr-1">Current +</div>
+                    <select
+                      value={timeConditionHours}
+                      onChange={(e) => setTimeConditionHours(Number(e.target.value))}
+                      className="rounded-lg border border-border-strong bg-bg-base px-3 py-2 text-xs font-bold text-text-primary outline-none cursor-pointer focus:border-accent"
+                      disabled={isSubmitting}
+                    >
+                      <option value={1}>1 hour</option>
+                      <option value={2}>2 hours</option>
+                      <option value={6}>6 hours</option>
+                      <option value={12}>12 hours</option>
+                      <option value={24}>24 hours</option>
+                    </select>
+                    <div className="text-xs text-text-muted font-mono">
+                      (~ {new Date(Date.now() + timeConditionHours * 3600 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Order Preview Box */}
-            <div className="rounded-xl border border-accent/25 bg-bg-base p-4 text-xs space-y-1.5 font-sans">
+            <div className="rounded-xl border border-accent/25 bg-bg-base p-4 text-xs space-y-2 font-sans">
               <div className="font-mono text-[11px] font-semibold text-accent uppercase tracking-wider">
-                You are creating:
+                Execution Preview:
               </div>
-              <p className="text-text-secondary leading-relaxed">
-                If STRK price reaches <strong className="text-text-primary">${targetPrice || '2.00'}</strong>,{' '}
-                <strong className="text-text-primary">{amountIn || '0.0100'} STRK</strong> will be used for settlement.
-              </p>
+              <div className="text-text-secondary leading-relaxed font-mono text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-accent font-bold">WHEN</span>
+                  <span>STRK Price &ge; ${targetPrice || '2.00'}</span>
+                </div>
+                {timeConditionEnabled && (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-accent font-bold">AND</span>
+                    <span>Time &ge; {timeConditionHours}h from now (~ {new Date(Date.now() + timeConditionHours * 3600 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5 mt-2 border-t border-border/40 pt-2">
+                  <span className="text-success font-bold">THEN</span>
+                  <span>Swap {amountIn || '0.0100'} STRK &rarr; {estimatedOutput} USDC (Min: {minAmountOut || (numAmountIn * numTargetPrice * 0.95).toFixed(4)} USDC)</span>
+                </div>
+              </div>
             </div>
 
             {/* Modal Actions */}
