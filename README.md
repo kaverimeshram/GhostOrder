@@ -2,111 +2,203 @@
 
 Programmable conditional execution for Starknet.
 
-GhostOrder is an on-chain protocol that allows users to schedule conditional execution flows on Starknet. By converting user execution intents into secure, on-chain instructions, the protocol removes the need for centralized trigger infrastructure or manual transaction signing.
-
-```
-WHEN  [Price Condition]
-AND   [Time Condition]
-THEN  [Swap Action]
-```
-
-GhostOrder lets users create on-chain execution intents that remain dormant until their configured conditions are satisfied. Once conditions are satisfied, any permissionless keeper can trigger execution.
+GhostOrder is an on-chain automation protocol that enables users to schedule conditional transaction execution flows. By moving user intentions directly into secure smart-contract escrows, the protocol allows developers to build trigger-based automation workflows without introducing centralization vectors.
 
 ---
 
-## ❓ Why GhostOrder?
+## 💡 What is GhostOrder?
 
-Users often need to wait for a specific condition before taking an on-chain action.
+GhostOrder enables the creation of conditional on-chain orders that remain completely dormant in contract storage until predefined state conditions are satisfied. 
 
-For example:
-> *"I want to swap STRK for USDC when STRK reaches $2.00, but I don't want to continuously monitor the market and manually execute the transaction."*
+The protocol operates on a simple, trustless automation model:
 
-Traditional decentralised workflows force users to repeatedly check oracle feeds and manually sign transactions when conditions are met. Centralised trigger solutions introduce trust assumptions, potential single points of failure, and custody risks. GhostOrder solves this by locking assets in a secure escrow smart contract that evaluates execution parameters directly on-chain, enabling trustless trigger automation.
+```
+USER INTENT
+     ↓
+ CONDITION
+     ↓
+   WAIT
+     ↓
+CONDITION SATISFIED
+     ↓
+  EXECUTE
+```
+
+Users specify exactly *what* needs to be executed and *under what conditions*. Once those conditions are verified on-chain, public keepers trigger the action permissionlessly.
 
 ---
 
-## 🔄 V1 vs V2 Evolution
+## ⚠️ The Problem
 
-GhostOrder V2 moves from a hardcoded limit-order model to a modular, programmable execution engine.
+In Web3, taking an action on-chain usually requires active monitoring and manual execution.
 
-| Feature | V1 | V2 |
-| :--- | :--- | :--- |
-| **Execution model** | Flat conditional order | Programmable execution |
-| **Conditions** | Hardcoded price check | Stored Condition objects |
-| **Multiple conditions** | Limited (Price only) | Multiple conditions with AND |
-| **Time conditions** | No | Yes |
-| **Action model** | Fixed token swap flow | Action abstraction |
-| **Keeper** | Permissionless | Permissionless |
+Consider a simple user intention:
+> *"I want to swap my STRK for USDC when STRK reaches $2.00, but I don't want to sit in front of a chart and manually execute the transaction."*
+
+Traditional workflows present major friction points:
+- **Active Monitoring:** Users must constantly watch price feeds, block heights, or time conditions.
+- **Delayed Execution:** Missing a market trigger can lead to sub-optimal execution prices.
+- **Infrastructure Dependencies:** Relying on centralized triggering scripts introduces single points of failure and trust trade-offs.
+- **Complex Intents:** Combining multiple criteria (e.g. price threshold *and* time delay) is impossible to configure natively on typical decentralized exchanges.
+
+---
+
+## 💡 The Solution
+
+GhostOrder provides a programmable execution layer that automates these intents natively on Starknet.
+
+The protocol structures automated actions into a clean template:
+
+- **WHEN:** A specific state trigger occurs (e.g. STRK price hits a target).
+- **AND:** Optional additional criteria are met (e.g. a specific timestamp has passed).
+- **THEN:** Execute the configured transaction action (e.g. swap assets).
+
+During order creation, the user transfers the required inputs directly to a secure escrow contract. The smart contract maintains ownership of the funds and exposes view functions that verify whether conditions are satisfied. When satisfied, permissionless keepers trigger execution, and the contract routes the assets to the settlement interface.
 
 ---
 
 ## 🏗️ System Architecture
 
-GhostOrder separates state verification logic (Conditions) from transaction settlement execution (Actions).
+### Protocol Flow
+The diagram below illustrates the end-to-end lifecycle and data flows of the GhostOrder protocol:
 
 ```mermaid
 flowchart TD
-    User(["User"]) -->|1. Submit Order| Frontend[React Dashboard]
-    Frontend -->|2. Create Order| Escrow[GhostEscrowV2 Contract]
+    User(["User"]) -->|1. Create Order & Lock Input| EscrowContract["GhostOrder Contract"]
+    Frontend["React Dashboard"] -->|View State| EscrowContract
+    
+    EscrowContract -->|2. Escrow Funds| LockPool["Escrow Pool"]
+    EscrowContract -->|3. Query State| Oracle["Oracle / Block Timestamp"]
 
-    subgraph Escrow [GhostEscrowV2 Contract]
-        direction TB
-        OS[Order Storage]
-        CE[Condition Engine]
-        AE[Action Engine]
+    Keeper(["Keeper / Executor"]) -->|4. Poll is_order_executable| EscrowContract
+    
+    EscrowContract -.->|5. Return true/false| Keeper
+    
+    Keeper -->|6. Call execute_order| EscrowContract
+    EscrowContract -->|7. Release Escrow| Settlement["Settlement Contract"]
+    Settlement -->|8. Deliver Output Tokens| User
+```
+
+### V2 Internal Engine
+GhostOrder V2 extends the core escrow contract into a modular, programmable execution engine:
+
+```mermaid
+flowchart TD
+    subgraph GhostEscrowV2 [GhostEscrowV2 Contract]
+        OS["Order Storage"]
+        CE["Condition Engine"]
+        AE["Action Engine"]
     end
 
-    CE -->|Evaluate| PC[Price Condition]
-    CE -->|Evaluate| TC[Time Condition]
+    CE -->|Loop & AND Match| PriceCond["Price Condition"]
+    CE -->|Loop & AND Match| TimeCond["Time Condition"]
 
-    PC -->|Query Price| Oracle[Price Oracle]
-    TC -->|Query Timestamp| Time[Block Timestamp]
-
-    Keeper(["Keeper / Executor"]) -->|3. Query state| IsExec{"is_order_executable?"}
-    IsExec -->|Read| CE
-    
-    Keeper -->|4. Trigger execution| Exec[execute_order]
-    Exec -->|Verify Satisfied| AE
-    AE -->|5. Settle Action| Swap[Swap Action]
-    Swap -->|6. Deliver Tokens| Settlement[Settlement Contract]
+    AE -->|Settle Action| Swap["Swap Action"]
 ```
 
 ---
 
 ## 📋 How It Works
 
-The lifecycle of a programmable conditional execution order consists of four steps:
+The lifecycle of an automated order progresses through five distinct stages:
 
 ### 01 — Create Order
-The user specifies:
-- **Conditions**: Array of state checks (e.g. STRK price $\ge$ 2.00 and Time $\ge$ X).
-- **Action**: Target action parameters (e.g. Swap 10 STRK for USDC).
-- **Expiry**: Absolute timestamp after which the order becomes invalid.
+The user configures the target order parameters on-chain, including input assets, target conditions, desired action parameters, and order expiry.
 
 ### 02 — Funds Enter Escrow
-Input tokens (`amount_in` of `token_in`) are transferred into `GhostEscrowV2` and locked securely.
+The input tokens are transferred from the user's account and locked securely inside the GhostOrder escrow pool.
 
-### 03 — Conditions Are Evaluated
-The contract evaluates the dynamic conditions array on-chain. If any condition returns `false`, evaluation short-circuits.
+### 03 — Wait
+The order remains dormant in contract storage. The user can safely close their wallet and browser tab; the contract maintains the escrowed assets.
 
-### 04 — Permissionless Execution
-When all conditions are satisfied, any public keeper can trigger `execute_order()`. The contract atomically transfers the input assets to the settlement contract, executes the action, and delivers the outputs directly to the owner.
+### 04 — Condition Satisfied
+An oracle update or the passage of block time satisfies the target conditions configured in the contract.
 
----
-
-## 🛡️ Security & Execution Guarantees
-
-- **Immunized Execution Calldata:** Keepers only supply the `order_id` in the call. No execution parameters (tokens, amounts, or destinations) are passed by the caller, preventing parameter manipulation.
-- **On-Chain Enforcement:** The evaluation logic runs completely in the Cairo VM, ensuring execution cannot bypass the condition engine.
-- **Double-Execution Protection:** The order status transitions to `Executed` before any external assets leave the contract, protecting against re-entrancy and double execution.
-- **Owner-Only Cancellation:** Escrowed assets can only be withdrawn via keeper execution (conditions met) or via owner cancellation.
-- **Explicit Expiry Checks:** The contract rejects execution calls if `block_timestamp >= expiry`.
+### 05 — Execute
+A permissionless keeper detects the executable state, calls `execute_order()`, and the contract atomically completes the transaction, delivering the outputs to the user.
 
 ---
 
-## 📍 Live on Starknet Sepolia
+## 📄 Smart Contracts
 
-The V2 protocol is actively deployed and verified on **Starknet Sepolia**:
+The repository is organized into distinct, modular smart contracts:
+
+- **[`ghost_escrow_v2.cairo`](file:///Users/mikasa05/Documents/Ghost/src/ghost_escrow_v2.cairo):** The core protocol contract. Manages escrowed funds, runs the V2 Condition Engine, and coordinates execution triggers.
+- **[`types.cairo`](file:///Users/mikasa05/Documents/Ghost/src/types.cairo):** Defines serialization schemas, interfaces, custom `Condition` and `Action` structs, and the protocol's status enums.
+- **`mock_price_oracle.cairo`:** A mock price feed contract used for simulating live asset price feeds.
+- **`mock_settlement.cairo`:** Simulates dex/amm token routing by taking input assets from the escrow contract and delivering output tokens to the user.
+- **`mock_erc20.cairo`:** Standard ERC-20 token interface used for STRK and USDC mock token instances.
+
+---
+
+## 🤖 Permissionless Keeper Execution
+
+Execution of satisfied intents is completely permissionless. A network of keeper daemons polls the contract to automate transactions:
+
+1. **Scan:** The keeper queries the contract for all active order IDs.
+2. **Check:** The keeper calls the view function `is_order_executable(order_id)`.
+3. **Trigger:** If `true`, the keeper submits the `execute_order(order_id)` transaction.
+
+> [!IMPORTANT]
+> The keeper **does not** decide whether an order is valid or satisfied. The smart contract evaluates the conditions on-chain during the execution transaction and will revert if the keeper attempts to execute an order prematurely.
+
+---
+
+## 🛡️ Security Model
+
+- **On-Chain Logic Verification:** The contract evaluates oracle prices and timestamps directly in the Cairo VM, making it impossible to trigger execution unless conditions are satisfied.
+- **Immutable Call Parameters:** The keeper only passes the `order_id` as calldata. The tokens, swap amounts, and destination addresses are retrieved directly from contract storage, preventing keepers from altering transaction destinations.
+- **Re-entrancy Protection:** Order status is updated to `Executed` before assets leave the contract custody.
+- **Strict Expiry Limits:** The execution function reverts if `block_timestamp >= expiry`, preventing old orders from executing during unexpected market conditions.
+- **Owner-Exclusive Cancellations:** Active orders can only be cancelled by the order's creator (`owner`), which refunds the escrowed assets immediately.
+
+---
+
+## 🔄 V2: From Conditional Orders to Programmable Execution
+
+V1 served as the original proof-of-concept, supporting simple, price-triggered limit orders. V2 generalizes the protocol into a programmable conditional execution engine.
+
+```
+V1 PROTOCOL
+ Price Condition  ──>  Fixed Swap Execution Flow
+
+V2 PROTOCOL
+ Conditions Array ──>  Condition Engine  ──>  Action Engine (Modular Actions)
+```
+
+V2 introduces:
+- **Condition Structs:** Generic data structure storing parameters for multiple condition types.
+- **Time Conditions:** Execution locks that evaluate block timestamps.
+- **Comparison Operators:** Flexibility to use `<, <=, >, >=, ==` comparisons for oracle values.
+- **AND Operator Logic:** Evaluating lists of multiple conditions together.
+- **Action Abstraction:** Decoupling asset deposits and triggers from the execution routing.
+
+### V1 vs V2 Comparison
+
+| Feature | V1 | V2 |
+| :--- | :--- | :--- |
+| **Execution model** | Conditional trading | Programmable execution |
+| **Conditions** | Predefined price logic | Structured conditions |
+| **Time condition** | No | Yes |
+| **Multiple conditions** | Limited (Price only) | Multiple conditions using AND |
+| **Action model** | Fixed token swap flow | Action abstraction |
+| **Keeper** | Permissionless | Permissionless |
+
+### V2 Architecture Primitive
+
+V2 structures intents into an expandable condition-action matrix:
+
+```
+WHEN  [Condition A (Price >= target)]
+AND   [Condition B (Time >= timestamp)]
+THEN  [Action (Swap STRK -> USDC)]
+```
+
+---
+
+## 📍 Starknet Sepolia Deployments
+
+The protocol is actively deployed and verified on **Starknet Sepolia**:
 
 | Contract Name | Contract Address | Class Hash |
 | :--- | :--- | :--- |
@@ -114,9 +206,9 @@ The V2 protocol is actively deployed and verified on **Starknet Sepolia**:
 | **MockPriceOracle** | `0x63cc916c44b0ca8e6394adbead8a30aa3c1c3de6355f1d060e2962eed5883f2` | `0x00f72365bf8ff3cc5cc919b48c105bfad2e08da2ce279148d428bf0e606060c` |
 | **MockSettlement** | `0x6a24514c06e79b6879321b2d178f5d58848dc31e5c9aac5a0c51fd6bb6bf87e` | `0x040523a5bfd89ab5ffcc268df10ac35bbcd238d21b790d56b4618da2c8b0e8c8` |
 
-### On-Chain Proof
+### On-Chain Verification
 
-A live integration test run has successfully verified the entire execution pipeline on Starknet Sepolia:
+An end-to-end V2 execution test was run live on Sepolia, verifying the full lifecycle of a multi-condition order:
 
 - **Declaration Transaction:** [0x71c696ca04db71b07796ff41cf9b2a2e6116a50c195675a9daf16a895ef836a](https://sepolia.starkscan.co/tx/0x71c696ca04db71b07796ff41cf9b2a2e6116a50c195675a9daf16a895ef836a)
 - **Deployment Transaction:** [0x3be0c9c265b9e57a06bbb4d1be83ec78f5aa600849489da8cf30b734673aabe](https://sepolia.starkscan.co/tx/0x3be0c9c265b9e57a06bbb4d1be83ec78f5aa600849489da8cf30b734673aabe)
@@ -126,10 +218,29 @@ A live integration test run has successfully verified the entire execution pipel
 
 ---
 
+## 🧪 Testing
+
+The repository supports both local unit testing and live Starknet Sepolia integration testing:
+
+### Local Cairo Unit Tests
+To compile the smart contracts and execute the complete test suite (both V1 and V2 logic tests):
+```bash
+scarb build
+scarb test
+```
+
+### V2 On-Chain Integration Test
+To run the automated, end-to-end integration test validating condition logic and keeper execution live on Starknet Sepolia:
+```bash
+npm run test:v2-onchain
+```
+
+---
+
 ## 📂 Project Structure
 
-- **[`src/ghost_escrow_v2.cairo`](file:///Users/mikasa05/Documents/Ghost/src/ghost_escrow_v2.cairo)**: Main V2 escrow contract, condition engine, and action engine.
-- **[`src/types.cairo`](file:///Users/mikasa05/Documents/Ghost/src/types.cairo)**: Declarations of Cairo V2 structs, interfaces, and serialization rules.
+- **[`src/ghost_escrow_v2.cairo`](file:///Users/mikasa05/Documents/Ghost/src/ghost_escrow_v2.cairo)**: V2 escrow contract, condition engine, and action engine.
+- **[`src/types.cairo`](file:///Users/mikasa05/Documents/Ghost/src/types.cairo)**: Interface declarations, V2 structs, and serializations.
 - **[`scripts/executor.ts`](file:///Users/mikasa05/Documents/Ghost/scripts/executor.ts)**: Polling keeper script checking order execution status on-chain.
 - **[`scripts/test-v2-onchain.ts`](file:///Users/mikasa05/Documents/Ghost/scripts/test-v2-onchain.ts)**: Integration script testing V2 orders dynamically.
 - **[`scripts/deploy-v2.ts`](file:///Users/mikasa05/Documents/Ghost/scripts/deploy-v2.ts)**: Deployment script declaring and instantiating V2 contracts.
@@ -139,31 +250,27 @@ A live integration test run has successfully verified the entire execution pipel
 
 ## 🚀 Quick Start
 
-### 1. Build and Test Cairo Contracts
+Follow these steps to set up the repository, build contracts, run tests, and spin up the frontend and keeper:
+
 ```bash
-# Compile contracts to target/dev
+# 1. Install workspace dependencies
+npm install
+
+# 2. Compile smart contracts
 scarb build
 
-# Run contract unit tests
+# 3. Run unit tests
 scarb test
-```
 
-### 2. Run the Frontend Dashboard
-```bash
+# 4. Run the frontend dashboard
 cd frontend
 npm install
 npm run dev
-```
 
-### 3. Run the On-Chain Keeper Execution Script
-```bash
-# Polling daemon keeper
+# 5. Run the permissionless keeper script (in root)
 npx ts-node scripts/executor.ts
-```
 
-### 4. Run the V2 On-Chain Integration Test
-```bash
-# Executes the full V2 conditional lifecycle live on Sepolia
+# 6. Run the live V2 integration test on Sepolia
 npm run test:v2-onchain
 ```
 
