@@ -310,3 +310,11 @@ npm run test:v2-onchain
 - **Sub-Account Custody:** Implement session-key based execution intents, keeping assets in user smart-contract accounts rather than contract escrow.
 - **Generic Action Variants:** Add `Transfer` (recurring payments) and `Lend` (liquidity providing) actions.
 - **DEX Integrations:** Integrate AVNU and Ekubo routing for real AMM settlements on Starknet Mainnet.
+
+---
+
+## 📄 License
+
+GhostOrder is open source software licensed under the MIT License.
+
+See the [LICENSE](LICENSE) file for the full license text.
