@@ -1,14 +1,13 @@
 import React from 'react';
 import { useWallet } from '../context/WalletContext';
 import { NETWORK_CONFIG } from '../config/contracts';
-import { Shield, Wallet, LogOut } from 'lucide-react';
 import { useRouter } from '../context/RouterContext';
 
 interface HeaderProps {
-  onOpenCreateOrder: () => void;
+  onRequestAccess: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = () => {
+export const Header: React.FC<HeaderProps> = ({ onRequestAccess }) => {
   const { page, navigate } = useRouter();
   const { address, isConnected, isConnecting, connect, disconnect } = useWallet();
 
@@ -17,94 +16,115 @@ export const Header: React.FC<HeaderProps> = () => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  const isLandingPage = page === 'home';
+
   return (
-    <header className="sticky top-0 z-50 border-b border-subtle bg-base/85 backdrop-blur-md transition-all h-20 w-full flex items-center">
-      <div className="container-custom flex items-center justify-between w-full">
+    <header className="sticky top-0 z-50 border-b border-border-soft bg-bg/85 backdrop-blur-md">
+      <div className="container-custom flex h-16 items-center justify-between">
         {/* Left Brand: GhostOrder Logo */}
-        <div
+        <button
           onClick={() => navigate('home')}
-          className="flex items-center gap-3 cursor-pointer group select-none"
+          className="flex items-center gap-2 text-text-primary bg-transparent border-0 cursor-pointer outline-none"
         >
-          <Shield size={20} className="text-accent-blue transition duration-300 group-hover:scale-105" />
-          <span className="font-sans text-sm font-extrabold tracking-widest text-text-primary uppercase">
-            GhostOrder
-          </span>
-        </div>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" className="text-phosphor">
+            <path
+              d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6l-8-4Z"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="font-display text-[15px] font-bold tracking-tight">GhostOrder</span>
+        </button>
 
-        {/* Center Navigation Links */}
-        <nav className="hidden md:flex items-center gap-10 text-[10px] font-mono tracking-widest uppercase text-text-secondary">
-          <button
-            onClick={() => navigate('home')}
-            className={`transition-colors duration-200 cursor-pointer ${
-              page === 'home' ? 'text-accent-blue font-bold' : 'hover:text-text-primary'
-            }`}
-          >
-            Home
-          </button>
-          <button
-            onClick={() => navigate('dashboard')}
-            className={`transition-colors duration-200 cursor-pointer ${
-              page === 'dashboard' ? 'text-accent-blue font-bold' : 'hover:text-text-primary'
-            }`}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => navigate('protocol')}
-            className={`transition-colors duration-200 cursor-pointer ${
-              page === 'protocol' ? 'text-accent-blue font-bold' : 'hover:text-text-primary'
-            }`}
-          >
-            Protocol
-          </button>
-          <button
-            onClick={() => navigate('contracts')}
-            className={`transition-colors duration-200 cursor-pointer ${
-              page === 'contracts' ? 'text-accent-blue font-bold' : 'hover:text-text-primary'
-            }`}
-          >
-            Contracts
-          </button>
-        </nav>
-
-        {/* Right Wallet Status / Actions */}
-        <div className="flex items-center gap-4">
-          {/* Network name status tag */}
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-border-strong bg-navy-dark px-4 py-1.5 text-xs text-text-secondary select-none">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-green animate-pulse"></span>
-            <span className="font-mono text-[9px] tracking-widest uppercase">{NETWORK_CONFIG.networkName}</span>
-          </div>
-
-          {/* Wallet connectivity trigger */}
-          {isConnected && address ? (
-            <div className="flex items-center gap-2">
+        {/* Navigation Links */}
+        {isLandingPage ? (
+          <nav className="hidden items-center gap-7 md:flex" aria-label="Primary">
+            {['Product', 'Protocol', 'Security', 'FAQ'].map((item) => (
               <a
-                href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${address}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 rounded-xl border border-border-strong bg-navy-card px-4 py-2 font-mono text-[10px] tracking-wider font-semibold text-text-secondary hover:bg-navy-hover hover:text-text-primary transition-all duration-200"
+                key={item}
+                href={`#${item.toLowerCase()}`}
+                className="text-[13px] font-medium text-text-secondary transition-colors hover:text-text-primary decoration-none"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-accent-blue"></span>
-                <span>{shorten(address)}</span>
+                {item}
               </a>
-
-              <button
-                onClick={disconnect}
-                className="flex items-center justify-center h-9 w-9 rounded-xl border border-border-strong bg-navy-card text-text-muted hover:text-text-primary hover:bg-navy-hover transition-all duration-200 cursor-pointer"
-                title="Disconnect Wallet"
-              >
-                <LogOut size={14} />
-              </button>
-            </div>
-          ) : (
+            ))}
+          </nav>
+        ) : (
+          <nav className="hidden items-center gap-7 md:flex" aria-label="App">
             <button
-              onClick={connect}
-              disabled={isConnecting}
-              className="btn-primary text-[10px] tracking-widest py-2 px-5 cursor-pointer h-10 rounded-xl"
+              onClick={() => navigate('home')}
+              className={`text-[13px] font-medium transition-colors bg-transparent border-0 cursor-pointer ${
+                (page as string) === 'home' ? 'text-phosphor font-medium' : 'text-text-secondary hover:text-text-primary'
+              }`}
             >
-              <Wallet size={13} />
-              <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+              Home
             </button>
+            <button
+              onClick={() => navigate('dashboard')}
+              className={`text-[13px] font-medium transition-colors bg-transparent border-0 cursor-pointer ${
+                page === 'dashboard' ? 'text-phosphor font-medium' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => navigate('contracts')}
+              className={`text-[13px] font-medium transition-colors bg-transparent border-0 cursor-pointer ${
+                page === 'contracts' ? 'text-phosphor font-medium' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Contracts
+            </button>
+          </nav>
+        )}
+
+        {/* Right Action */}
+        <div className="flex items-center gap-4">
+          {isLandingPage ? (
+            <button onClick={onRequestAccess} className="btn-primary !px-4 !py-2 text-[12.5px]">
+              Request Access →
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              {/* Network name status tag */}
+              <div className="hidden sm:flex items-center gap-2 rounded-md border border-border-soft bg-surface-2 px-3 py-1.5 text-[11px] text-text-muted select-none">
+                <span>Starknet Sepolia</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-phosphor" />
+              </div>
+
+              {/* Wallet Button */}
+              {isConnected && address ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`${NETWORK_CONFIG.blockExplorerUrl}/contract/${address}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mono flex items-center gap-2 rounded-md border border-border-soft bg-surface-2 px-3 py-1.5 text-[11.5px] text-text-secondary hover:text-text-primary decoration-none transition-colors"
+                  >
+                    <span>{shorten(address)}</span>
+                  </a>
+
+                  <button
+                    onClick={disconnect}
+                    className="mono flex h-8 w-8 items-center justify-center rounded-md border border-border-soft text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
+                    title="Disconnect Wallet"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={connect}
+                  disabled={isConnecting}
+                  className="btn-primary !px-4 !py-2 text-[12.5px]"
+                >
+                  <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

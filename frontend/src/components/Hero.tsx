@@ -1,78 +1,52 @@
 import React from 'react';
-import { HeroVisual } from './HeroVisual';
-import { useRouter } from '../context/RouterContext';
+import BrowserFrame from './BrowserFrame';
+import HeroPanel from './HeroPanel';
 
 interface HeroProps {
-  onOpenCreateOrder: () => void;
+  onRequestAccess: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({
-  onOpenCreateOrder,
-}) => {
-  const { navigate } = useRouter();
-
+export default function Hero({ onRequestAccess }: HeroProps) {
   return (
-    <section className="py-12 lg:py-0 bg-base overflow-hidden flex items-center min-h-[calc(100vh-80px)] w-full">
-      <div className="container-custom">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-center">
-          {/* Left Column: Headline & Actions */}
-          <div className="lg:col-span-7 flex flex-col gap-6 text-left">
-            {/* Live Eyebrow */}
-            <div className="inline-flex self-start items-center gap-2 text-[10px] font-mono font-bold text-accent-blue uppercase tracking-widest bg-accent-blue/5 border border-accent-blue/15 px-3.5 py-1.5 rounded-full select-none">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent-green animate-pulse"></span>
-              <span>LIVE ON STARKNET SEPOLIA</span>
-            </div>
+    <section id="top" className="relative overflow-hidden bg-grid-fade pb-8 pt-20 lg:pt-28">
+      <div className="container-custom text-center">
+        <span className="mono mb-6 inline-flex items-center gap-2 rounded-full border border-border-soft px-3 py-1.5 text-[11px] tracking-wide text-text-secondary">
+          <span className="h-1.5 w-1.5 rounded-full bg-phosphor" />
+          Live on Starknet Sepolia
+        </span>
 
-            {/* Main Headings */}
-            <div className="flex flex-col gap-4">
-              <h1 
-                className="font-sans font-extrabold tracking-tight text-text-primary leading-[1.05] uppercase"
-                style={{ fontSize: 'clamp(2.2rem, 5vw, 4.8rem)' }}
-              >
-                Private<br />
-                Conditional<br />
-                Orders
-              </h1>
-              
-              <h2 
-                className="font-serif italic font-normal text-text-secondary leading-[1.2] pt-1"
-                style={{ fontSize: 'clamp(1.4rem, 2.8vw, 2.5rem)' }}
-              >
-                Executed When Conditions Are Met.
-              </h2>
-            </div>
+        <h1 className="font-display mx-auto max-w-3xl text-[38px] font-bold leading-[1.08] tracking-tight sm:text-[52px] lg:text-[60px] text-text-primary">
+          Trade without broadcasting your intent.
+        </h1>
 
-            {/* Description */}
-            <p className="max-w-xl text-xs sm:text-sm text-text-secondary leading-relaxed font-sans">
-              Create conditional on-chain orders that remain dormant until your price conditions are satisfied. GhostOrder automates trade intent on Starknet without custodian key exposure.
-            </p>
+        <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-text-secondary">
+          GhostOrder holds your conditional orders dormant on-chain — invisible to
+          front-runners, copy-traders, and MEV bots — until your exact price
+          target fires.
+        </p>
 
-            {/* Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-4">
-              <button
-                onClick={() => navigate('dashboard')}
-                className="btn-primary text-xs font-semibold cursor-pointer h-12 rounded-xl px-6"
-              >
-                <span>Open Dashboard →</span>
-              </button>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <button onClick={onRequestAccess} className="btn-primary">
+            Request Access →
+          </button>
+          <a href="#protocol" className="btn-secondary">
+            Read the Protocol
+          </a>
+        </div>
+      </div>
 
-              <button
-                onClick={() => navigate('protocol')}
-                className="btn-secondary text-xs font-semibold cursor-pointer h-12 rounded-xl px-6"
-              >
-                <span>Verify Protocol →</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Right Column: Hero Visual Product Preview */}
-          <div className="lg:col-span-5 w-full flex justify-center lg:justify-end relative">
-            {/* Ambient background glow */}
-            <div className="absolute -inset-10 bg-gradient-to-tr from-accent-blue/10 to-accent-blue/0 blur-[64px] pointer-events-none rounded-full"></div>
-            <HeroVisual onOpenCreateOrder={() => navigate('dashboard')} />
-          </div>
+      {/* the embedded product — this is the hero's real subject */}
+      <div className="container-custom mt-14 lg:mt-20">
+        <div className="relative">
+          <div
+            className="pointer-events-none absolute -inset-x-10 -inset-y-6 rounded-[32px] bg-phosphor/10 blur-3xl"
+            aria-hidden="true"
+          />
+          <BrowserFrame url="app.ghostorder.xyz/dashboard" className="relative shadow-glow">
+            <HeroPanel />
+          </BrowserFrame>
         </div>
       </div>
     </section>
   );
-};
+}

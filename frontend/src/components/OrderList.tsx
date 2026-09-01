@@ -3,7 +3,7 @@ import { useOrders } from '../context/OrderContext';
 import { useWallet } from '../context/WalletContext';
 import { OnChainOrder, OrderStatus } from '../types/contracts';
 import { getTokenByAddress } from '../config/contracts';
-import { ArrowRight, Play, XCircle, Clock, ShieldAlert } from 'lucide-react';
+import { Play, XCircle, Clock, ShieldAlert } from 'lucide-react';
 
 interface OrderListProps {
   onSelectOrder: (order: OnChainOrder) => void;
@@ -51,86 +51,83 @@ export const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
   const renderStatusBadge = (order: OnChainOrder) => {
     if (order.status === OrderStatus.Executed) {
       return (
-        <span className="badge-status badge-executed">
-          <span className="h-1 w-1 rounded-full bg-success"></span>
+        <span className="mono rounded-full border border-phosphor/30 bg-phosphor/10 px-2.5 py-1 text-[10px] text-phosphor">
           EXECUTED
         </span>
       );
     }
     if (order.status === OrderStatus.Cancelled) {
       return (
-        <span className="badge-status badge-cancelled">
-          <span className="h-1 w-1 rounded-full bg-danger"></span>
+        <span className="mono rounded-full border border-danger/30 bg-danger/10 px-2.5 py-1 text-[10px] text-danger">
           CANCELLED
         </span>
       );
     }
     if (order.isExecutable) {
       return (
-        <span className="badge-status badge-ready">
-          <span className="h-1 w-1 rounded-full bg-success animate-ping"></span>
+        <span className="mono rounded-full border border-phosphor/30 bg-phosphor/10 px-2.5 py-1 text-[10px] text-phosphor animate-pulse">
           READY
         </span>
       );
     }
     return (
-      <span className="badge-status badge-active">
-        <span className="h-1 w-1 rounded-full bg-accent animate-pulse"></span>
+      <span className="mono rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-text-muted">
         ACTIVE
       </span>
     );
   };
 
   return (
-    <div className="pb-24 pt-6 bg-[#06080c] w-full">
+    <div className="pb-24 pt-6 bg-bg w-full text-left">
       <div className="container-custom">
         {/* Filter Tabs Header */}
-        <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4 border-b border-border-soft pb-4">
+          <div className="flex flex-wrap items-center gap-2">
             {(['ALL', 'ACTIVE', 'EXECUTED', 'CANCELLED'] as const).map((tab) => {
               const count =
                 tab === 'ALL'
-                   ? orders.length
-                   : tab === 'ACTIVE'
-                   ? orders.filter((o) => o.status === OrderStatus.Active).length
-                   : tab === 'EXECUTED'
-                   ? orders.filter((o) => o.status === OrderStatus.Executed).length
-                   : orders.filter((o) => o.status === OrderStatus.Cancelled).length;
+                  ? orders.length
+                  : tab === 'ACTIVE'
+                  ? orders.filter((o) => o.status === OrderStatus.Active).length
+                  : tab === 'EXECUTED'
+                  ? orders.filter((o) => o.status === OrderStatus.Executed).length
+                  : orders.filter((o) => o.status === OrderStatus.Cancelled).length;
 
+              const isActive = activeTab === tab;
               return (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`font-mono text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === tab
-                      ? 'bg-accent text-white font-semibold shadow-[0_0_12px_rgba(99,102,241,0.25)]'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
+                  className={`mono text-[11px] tracking-wide px-3 py-1.5 rounded-md transition flex items-center gap-1.5 cursor-pointer border ${
+                    isActive
+                      ? 'bg-phosphor/10 text-phosphor border-phosphor/30 font-medium'
+                      : 'text-text-secondary hover:text-text-primary border-border-soft hover:bg-surface-3'
                   }`}
                 >
                   <span>{tab}</span>
-                  <span className="text-[9px] text-text-muted">({count})</span>
+                  <span className="opacity-60 text-[9px]">({count})</span>
                 </button>
               );
             })}
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 font-mono text-xs text-text-secondary">
+          <div className="hidden sm:flex items-center gap-2 mono text-[11px] text-text-muted">
             <span>Oracle Price:</span>
-            <span className="text-accent font-bold">${oraclePriceFormatted} USDC</span>
+            <span className="text-phosphor font-bold">${oraclePriceFormatted} USDC</span>
           </div>
         </div>
 
         {/* Order Table / List */}
-        <div className="mt-6 space-y-3.5">
+        <div className="mt-6 space-y-4">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-text-muted border border-border bg-surface rounded-xl">
-              <Clock size={24} className="animate-spin text-accent" />
-              <p className="mt-3 font-mono text-xs">Syncing on-chain orders from Starknet Sepolia...</p>
+            <div className="flex flex-col items-center justify-center py-16 text-text-muted border border-border-soft bg-surface rounded-xl">
+              <Clock size={20} className="animate-spin text-phosphor" />
+              <p className="mt-3 mono text-[12px] text-text-secondary">Syncing on-chain orders from Starknet Sepolia...</p>
             </div>
           ) : filteredOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-text-muted border border-border bg-surface rounded-xl">
-              <ShieldAlert size={28} className="text-text-muted" />
-              <p className="mt-3 font-mono text-xs text-text-secondary">
+            <div className="flex flex-col items-center justify-center py-16 text-text-muted border border-border-soft bg-surface rounded-xl">
+              <ShieldAlert size={24} className="text-text-muted" />
+              <p className="mt-3 mono text-[12px] text-text-secondary">
                 No orders found in "{activeTab}" filter.
               </p>
             </div>
@@ -150,54 +147,54 @@ export const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
                 <div
                   key={order.id.toString()}
                   onClick={() => onSelectOrder(order)}
-                  className="p-5 cursor-pointer relative overflow-hidden group flex flex-col lg:flex-row lg:items-center justify-between gap-4 border border-border-strong bg-surface-elevated rounded-xl hover:-translate-y-0.5 hover:border-accent/30 hover:bg-[#121622]/40 transition duration-300 pl-6"
+                  className="p-5 cursor-pointer relative overflow-hidden group flex flex-col lg:flex-row lg:items-center justify-between gap-4 panel hover:-translate-y-0.5 hover:border-phosphor/30 transition duration-300 pl-6"
                 >
                   {/* Subtle left accent highlight indicator line on hover */}
-                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent scale-y-0 group-hover:scale-y-100 transition duration-200"></div>
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-phosphor scale-y-0 group-hover:scale-y-100 transition duration-200"></div>
 
                   {/* Order ID & Pair */}
                   <div className="flex items-center gap-6 min-w-[220px]">
-                    <span className="font-mono text-sm font-bold text-text-muted group-hover:text-text-primary transition duration-300">
+                    <span className="mono text-xs text-text-muted group-hover:text-text-primary transition duration-300">
                       #{orderNum}
                     </span>
 
                     <div>
-                      <div className="text-base font-bold text-text-primary flex items-center gap-1.5">
+                      <div className="font-display text-[15px] font-bold text-text-primary flex items-center gap-1.5">
                         <span>{tokenInInfo.symbol}</span>
-                        <span className="text-text-muted font-normal text-xs">/</span>
+                        <span className="text-text-muted font-normal text-xs">→</span>
                         <span>{tokenOutInfo.symbol}</span>
                       </div>
-                      <div className="font-mono text-xs text-text-secondary mt-0.5">
+                      <div className="mono text-[11px] text-text-secondary mt-0.5">
                         Escrow: {formattedAmountIn} {tokenInInfo.symbol}
                       </div>
                     </div>
                   </div>
 
                   {/* Target & Oracle Price */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 font-mono text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mono text-[12px]">
                     <div>
-                      <div className="text-[10px] uppercase text-text-muted">TARGET</div>
-                      <div className="text-sm font-bold text-text-primary mt-0.5">
+                      <div className="text-[10px] tracking-wide text-text-muted uppercase">TARGET</div>
+                      <div className="font-medium text-text-primary mt-0.5">
                         ≥ ${formattedTargetPrice}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-[10px] uppercase text-text-muted">ORACLE</div>
-                      <div className="text-sm font-bold text-accent mt-0.5">
+                      <div className="text-[10px] tracking-wide text-text-muted uppercase">ORACLE</div>
+                      <div className="font-medium text-phosphor mt-0.5">
                         ${oraclePriceFormatted}
                       </div>
                     </div>
 
                     <div className="hidden sm:block">
-                      <div className="text-[10px] uppercase text-text-muted">STATUS</div>
+                      <div className="text-[10px] tracking-wide text-text-muted uppercase">STATUS</div>
                       <div className="mt-1">{renderStatusBadge(order)}</div>
                     </div>
                   </div>
 
                   {/* Actions & Mobile Status */}
                   <div
-                    className="flex items-center justify-between lg:justify-end gap-3 pt-2 lg:pt-0 border-t border-border lg:border-t-0"
+                    className="flex items-center justify-between lg:justify-end gap-3 pt-2 lg:pt-0 border-t border-border-soft lg:border-t-0"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="sm:hidden">{renderStatusBadge(order)}</div>
@@ -209,10 +206,10 @@ export const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
                             <button
                               onClick={(e) => handleExecute(e, order.id)}
                               disabled={!isConnected || isExecLoading}
-                              className="btn-action-execute cursor-pointer"
+                              className="mono flex items-center gap-1.5 rounded-md border border-phosphor/30 bg-phosphor/10 px-3 py-1.5 text-[11.5px] text-phosphor hover:bg-phosphor/20 transition duration-150 cursor-pointer disabled:opacity-50"
                               title="Execute conditional order"
                             >
-                              <Play size={12} fill="currentColor" />
+                              <Play size={10} fill="currentColor" />
                               <span>{isExecLoading ? 'Executing...' : 'Execute'}</span>
                             </button>
                           )}
@@ -220,10 +217,10 @@ export const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
                           <button
                             onClick={(e) => handleCancel(e, order.id)}
                             disabled={!isConnected || isCancelLoading}
-                            className="btn-action-cancel cursor-pointer"
+                            className="mono flex items-center gap-1.5 rounded-md border border-danger/30 bg-danger/10 px-3 py-1.5 text-[11.5px] text-danger hover:bg-danger/20 transition duration-150 cursor-pointer disabled:opacity-50"
                             title="Cancel order and refund escrow"
                           >
-                            <XCircle size={12} />
+                            <XCircle size={10} />
                             <span>{isCancelLoading ? 'Cancelling...' : 'Cancel'}</span>
                           </button>
                         </>
@@ -231,7 +228,7 @@ export const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
 
                       <button
                         onClick={() => onSelectOrder(order)}
-                        className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer"
+                        className="btn-secondary !px-3 !py-1.5 text-[11.5px]"
                       >
                         <span>View →</span>
                       </button>
