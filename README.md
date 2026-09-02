@@ -318,3 +318,7 @@ npm run test:v2-onchain
 GhostOrder is open source software licensed under the MIT License.
 
 See the [LICENSE](LICENSE) file for the full license text.
+
+## Project Status
+
+GhostOrder V2 is complete and ready for demo recording.
