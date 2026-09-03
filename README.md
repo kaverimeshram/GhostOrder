@@ -322,3 +322,8 @@ See the [LICENSE](LICENSE) file for the full license text.
 ## Project Status
 
 GhostOrder V2 is complete and ready for demo recording.
+cat >> README.md <<'EOF'
+
+## Current Status
+
+GhostOrder V2 frontend, backend integration, Cairo contracts, conditional execution engine, and permissionless keeper flow are implemented and ready for demonstration.
